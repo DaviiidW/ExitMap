@@ -1,6 +1,7 @@
 """Test doubles shared by the test suite."""
 
 import json
+import threading
 from collections.abc import Mapping
 from email.utils import parsedate_to_datetime
 from pathlib import Path
@@ -55,3 +56,35 @@ class FakeMailProvider:
         if self.provider is Provider.OUTLOOK:
             raise RevokeNotSupported()
         self.revoked = True
+
+
+class ControlledMailProvider(FakeMailProvider):
+    """``FakeMailProvider`` that can pause or fail while reading headers.
+
+    Before reading the headers of message number ``pause_at`` (1-based) it sets
+    ``paused`` and waits for ``resume``; at message number ``fail_at`` it raises ``error``.
+    """
+
+    def __init__(
+        self,
+        email: str,
+        pause_at: int | None = None,
+        fail_at: int | None = None,
+        error: Exception | None = None,
+    ) -> None:
+        super().__init__(email)
+        self.pause_at = pause_at
+        self.fail_at = fail_at
+        self.error = error
+        self.paused = threading.Event()
+        self.resume = threading.Event()
+        self.headers_read = 0
+
+    def get_headers(self, message_id: str) -> Mapping[str, str]:
+        self.headers_read += 1
+        if self.headers_read == self.pause_at:
+            self.paused.set()
+            self.resume.wait(timeout=5)
+        if self.headers_read == self.fail_at:
+            raise self.error
+        return super().get_headers(message_id)

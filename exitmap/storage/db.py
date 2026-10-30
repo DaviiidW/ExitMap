@@ -365,3 +365,7 @@ class Database:
                 " ON CONFLICT (key) DO UPDATE SET value = excluded.value",
                 (key, value),
             )
+
+    def delete_setting(self, key: str) -> None:
+        with self._write():
+            self.conn.execute("DELETE FROM settings WHERE key = ?", (key,))

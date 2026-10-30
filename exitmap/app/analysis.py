@@ -11,15 +11,22 @@ Each analysis covers one account, so the same domain in two accounts gives two s
 
 ``save_analysis`` merges a complete analysis into the database in one transaction
 (plan §3 "Fusión"; spec F2-8, F7-1, F8-3, F8-4, F8-6).
+
+``AnalysisService`` runs one analysis at a time in a background thread, with progress,
+cancellation and the interruption mark (plan §2 "Concurrencia", §3; spec F2-4..6, F2-9).
 """
 
+import logging
+import queue
+import threading
 from collections import Counter
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
-from enum import StrEnum
 from email.header import decode_header, make_header
 from email.utils import parseaddr, parsedate_to_datetime
+from enum import StrEnum
+from pathlib import Path
 
 from exitmap.domain.catalog import Catalog, default_catalog
 from exitmap.domain.detection import Rules, detect
@@ -27,10 +34,20 @@ from exitmap.domain.domains import registrable_domain
 from exitmap.domain.links import management_link
 from exitmap.domain.models import Account, Evidence, RelationType, Service, State
 from exitmap.domain.unsubscribe import UnsubscribeOption, parse_unsubscribe
+from exitmap.errors import AnalysisInProgressError, ExitMapError
 from exitmap.providers.base import Folders, MailProvider, Period
 from exitmap.storage.db import Database
 
 BODY_TYPES = frozenset({RelationType.REGISTERED, RelationType.ACCESS})
+
+# Settings key present while an analysis runs; left behind if the app is closed (F2-6).
+IN_PROGRESS_KEY = "analysis_in_progress"
+
+logger = logging.getLogger(__name__)
+
+
+class AnalysisCancelled(Exception):
+    """The user cancelled the analysis (spec F2-5)."""
 
 
 @dataclass
@@ -163,12 +180,29 @@ def analyse(
     account_id: int | None = None,
     catalog: Catalog | None = None,
     rules: Rules | None = None,
+    on_progress: Callable[[int, int], None] | None = None,
+    cancel: threading.Event | None = None,
 ) -> list[DetectedService]:
-    """Read every message of ``period`` and ``folders`` and return the detected services."""
+    """Read every message of ``period`` and ``folders`` and return the detected services.
+
+    ``on_progress(done, total)`` is called after each message (F2-4). If ``cancel`` gets
+    set, ``AnalysisCancelled`` is raised before the next message (F2-5).
+    """
     aggregator = ServiceAggregator(account_id, catalog, rules)
-    for message_id in provider.list_message_ids(period, folders):
+    message_ids = provider.list_message_ids(period, folders)
+    total = len(message_ids)
+    for done, message_id in enumerate(message_ids, start=1):
+        _check_cancel(cancel)
         aggregator.add(message_id, provider.get_headers(message_id))
+        if on_progress is not None:
+            on_progress(done, total)
+    _check_cancel(cancel)
     return aggregator.services(provider)
+
+
+def _check_cancel(cancel: threading.Event | None) -> None:
+    if cancel is not None and cancel.is_set():
+        raise AnalysisCancelled()
 
 
 class AnalysisMode(StrEnum):
@@ -273,3 +307,144 @@ def _needs_alert(service: Service, unseen: list[Evidence]) -> bool:
 def _add_evidence(db: Database, service_id: int, evidence: list[Evidence]) -> None:
     for item in evidence:
         db.add_evidence(replace(item, service_id=service_id, id=None))
+
+
+@dataclass(frozen=True)
+class Progress:
+    """``done`` of ``total`` messages processed (spec F2-4)."""
+
+    done: int
+    total: int
+
+
+@dataclass(frozen=True)
+class Finished:
+    """The analysis is complete and saved."""
+
+    service_count: int
+
+
+@dataclass(frozen=True)
+class Cancelled:
+    """The analysis was cancelled; the last complete analysis is kept (spec F2-5)."""
+
+
+@dataclass(frozen=True)
+class Failed:
+    """The analysis stopped on an error; the last complete analysis is kept (spec F2-6)."""
+
+    error: ExitMapError
+
+
+AnalysisEvent = Progress | Finished | Cancelled | Failed
+
+
+class AnalysisService:
+    """Runs one analysis at a time, in any account, in a background thread (spec F2-9).
+
+    The thread opens its own connection to ``db_path`` (SQLite connections are bound to
+    their thread). Events go to ``events``, read by the interface with Tk's ``after()``.
+    Nothing is committed unless the analysis completes.
+    """
+
+    def __init__(
+        self,
+        db_path: Path | str,
+        catalog: Catalog | None = None,
+        rules: Rules | None = None,
+    ) -> None:
+        self.db_path = db_path
+        self.catalog = catalog
+        self.rules = rules
+        self.events: queue.Queue[AnalysisEvent] = queue.Queue()
+        self._lock = threading.Lock()
+        self._cancel = threading.Event()
+        self._thread: threading.Thread | None = None
+
+    @property
+    def running(self) -> bool:
+        return self._lock.locked()
+
+    def start(
+        self,
+        provider: MailProvider,
+        account_id: int,
+        period: Period = Period(),
+        folders: Folders = Folders(),
+        mode: AnalysisMode = AnalysisMode.ALL,
+    ) -> None:
+        """Start an analysis; raises ``AnalysisInProgressError`` if one is running."""
+        if not self._lock.acquire(blocking=False):
+            raise AnalysisInProgressError()
+        self._cancel.clear()
+        self._thread = threading.Thread(
+            target=self._run,
+            args=(provider, account_id, period, folders, mode),
+            name="exitmap-analysis",
+            daemon=True,
+        )
+        self._thread.start()
+
+    def cancel(self) -> None:
+        """Ask the running analysis to stop; its results are discarded (spec F2-5)."""
+        self._cancel.set()
+
+    def join(self, timeout: float | None = None) -> None:
+        """Wait for the analysis thread to end."""
+        if self._thread is not None:
+            self._thread.join(timeout)
+
+    def _run(
+        self,
+        provider: MailProvider,
+        account_id: int,
+        period: Period,
+        folders: Folders,
+        mode: AnalysisMode,
+    ) -> None:
+        event: AnalysisEvent
+        try:
+            with Database(self.db_path) as db:
+                db.set_setting(IN_PROGRESS_KEY, str(account_id))
+                try:
+                    event = self._analyse(db, provider, account_id, period, folders, mode)
+                finally:
+                    db.delete_setting(IN_PROGRESS_KEY)
+        except Exception as exc:  # noqa: BLE001 - every failure must reach the user
+            event = Failed(_user_error(exc))
+        finally:
+            self._lock.release()
+        self.events.put(event)
+
+    def _analyse(
+        self,
+        db: Database,
+        provider: MailProvider,
+        account_id: int,
+        period: Period,
+        folders: Folders,
+        mode: AnalysisMode,
+    ) -> AnalysisEvent:
+        try:
+            detected = analyse(
+                provider,
+                period,
+                folders,
+                account_id,
+                self.catalog,
+                self.rules,
+                on_progress=lambda done, total: self.events.put(Progress(done, total)),
+                cancel=self._cancel,
+            )
+            # Last chance to cancel: once saving starts the analysis is complete.
+            _check_cancel(self._cancel)
+        except AnalysisCancelled:
+            return Cancelled()
+        save_analysis(db, account_id, detected, mode)
+        return Finished(len(detected))
+
+
+def _user_error(exc: Exception) -> ExitMapError:
+    """Error to show to the user; only the exception type is logged (constitution 6)."""
+    logger.warning("Analysis failed: %s", type(exc).__name__)
+    return exc if isinstance(exc, ExitMapError) else ExitMapError()

@@ -118,7 +118,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Hecho cuando: tests de integración para cada regla de fusión y persistencia tras reabrir
     la BD.
 
-- [ ] T016 — Ejecución en segundo plano
+- [x] T016 — Ejecución en segundo plano
   - Qué: hilo con progreso (`queue.Queue`), cancelación (`threading.Event`), cerrojo de un
     único análisis, marca `analysis_in_progress` en `settings`, sin `COMMIT` si se cancela o
     falla.
