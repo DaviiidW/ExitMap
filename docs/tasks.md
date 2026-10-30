@@ -72,7 +72,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Hecho cuando: tests por tipo (registro, suscripción por `List-Unsubscribe`, acceso),
     combinación de tipos y correo personal sin tipo.
 
-- [ ] T010 — Catálogo
+- [x] T010 — Catálogo
   - Qué: `data/catalog.json` inicial con Google, Microsoft, Amazon, Netflix, Spotify,
     Facebook, Instagram, LinkedIn, X y PayPal, y `domain/catalog.py` (búsqueda por dominio;
     fichero ausente o mal formado → error comprensible).

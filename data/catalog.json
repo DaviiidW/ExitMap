@@ -1,0 +1,70 @@
+{
+  "_comment": "Known services indexed by registrable domain (plan §4 'Catálogo'). manage_url: page to manage or delete the account; unsubscribe_url: email preferences page, or null. Several domains of the same company may point to the same data. URLs must use https.",
+  "services": {
+    "google.com": {
+      "name": "Google",
+      "manage_url": "https://myaccount.google.com/delete-services-or-account",
+      "unsubscribe_url": null
+    },
+    "microsoft.com": {
+      "name": "Microsoft",
+      "manage_url": "https://account.live.com/closeaccount.aspx",
+      "unsubscribe_url": null
+    },
+    "amazon.com": {
+      "name": "Amazon",
+      "manage_url": "https://www.amazon.com/privacy/data-deletion",
+      "unsubscribe_url": null
+    },
+    "amazon.es": {
+      "name": "Amazon",
+      "manage_url": "https://www.amazon.es/privacy/data-deletion",
+      "unsubscribe_url": null
+    },
+    "netflix.com": {
+      "name": "Netflix",
+      "manage_url": "https://www.netflix.com/cancelplan",
+      "unsubscribe_url": null
+    },
+    "spotify.com": {
+      "name": "Spotify",
+      "manage_url": "https://www.spotify.com/account/close/",
+      "unsubscribe_url": null
+    },
+    "facebook.com": {
+      "name": "Facebook",
+      "manage_url": "https://accountscenter.facebook.com/personal_info/account_ownership_and_control",
+      "unsubscribe_url": "https://www.facebook.com/settings?tab=notifications"
+    },
+    "facebookmail.com": {
+      "name": "Facebook",
+      "manage_url": "https://accountscenter.facebook.com/personal_info/account_ownership_and_control",
+      "unsubscribe_url": "https://www.facebook.com/settings?tab=notifications"
+    },
+    "instagram.com": {
+      "name": "Instagram",
+      "manage_url": "https://accountscenter.instagram.com/personal_info/account_ownership_and_control",
+      "unsubscribe_url": null
+    },
+    "linkedin.com": {
+      "name": "LinkedIn",
+      "manage_url": "https://www.linkedin.com/mypreferences/d/close-account",
+      "unsubscribe_url": null
+    },
+    "x.com": {
+      "name": "X",
+      "manage_url": "https://x.com/settings/deactivate",
+      "unsubscribe_url": "https://x.com/settings/email_notifications"
+    },
+    "twitter.com": {
+      "name": "X",
+      "manage_url": "https://x.com/settings/deactivate",
+      "unsubscribe_url": "https://x.com/settings/email_notifications"
+    },
+    "paypal.com": {
+      "name": "PayPal",
+      "manage_url": "https://www.paypal.com/myaccount/settings/",
+      "unsubscribe_url": null
+    }
+  }
+}
