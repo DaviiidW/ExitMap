@@ -22,7 +22,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Hecho cuando: tests unitarios para Linux/Windows (entorno simulado) y de integración que
     crea la carpeta en un directorio temporal y comprueba permisos.
 
-- [ ] T003 — Errores comprensibles
+- [x] T003 — Errores comprensibles
   - Qué: `errors.py` (jerarquía de excepciones con "qué falla" + "solución probable") y
     `ui/strings_es.py` con los textos de error.
   - Referencia: constitución 5; spec §5 "Cualquier error"; plan §7.
