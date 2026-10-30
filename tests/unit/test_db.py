@@ -178,3 +178,55 @@ def test_setting_is_written_and_overwritten(db):
     db.set_setting("session_mode", "0")
 
     assert db.get_setting("session_mode") == "0"
+
+
+def test_find_service_by_account_and_domain(db, account):
+    saved = db.save_service(Service(account.id, "example.com", "Example"))
+    assert db.find_service(account.id, "example.com") == saved
+    assert db.find_service(account.id, "other.com") is None
+
+
+def test_delete_evidence_of_one_service(db, account):
+    first = db.save_service(Service(account.id, "a.com", "A"))
+    second = db.save_service(Service(account.id, "b.com", "B"))
+    sent_at = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    for service in (first, second):
+        db.add_evidence(Evidence("m", "Hi", sent_at, RelationType.REGISTERED, service.id))
+    db.delete_evidence(first.id)
+    assert db.list_evidence(first.id) == []
+    assert len(db.list_evidence(second.id)) == 1
+
+
+def test_set_last_complete_analysis(db, account):
+    moment = datetime(2026, 5, 1, 12, tzinfo=timezone.utc)
+    db.set_last_complete_analysis(account.id, moment)
+    assert db.list_accounts()[0].last_complete_analysis_at == moment
+
+
+def test_transaction_commits_all_writes(db, account):
+    with db.transaction():
+        db.save_service(Service(account.id, "a.com", "A"))
+        db.set_setting("k", "v")
+    db.conn.rollback()
+    assert len(db.list_services()) == 1
+    assert db.get_setting("k") == "v"
+
+
+def test_transaction_rolls_back_every_write_on_error(db, account):
+    with pytest.raises(ValueError):
+        with db.transaction():
+            db.save_service(Service(account.id, "a.com", "A"))
+            db.set_setting("k", "v")
+            raise ValueError("boom")
+    assert db.list_services() == []
+    assert db.get_setting("k") is None
+    db.save_service(Service(account.id, "b.com", "B"))
+    db.conn.rollback()
+    assert len(db.list_services()) == 1
+
+
+def test_nested_transactions_are_rejected(db):
+    with db.transaction():
+        with pytest.raises(RuntimeError):
+            with db.transaction():
+                pass

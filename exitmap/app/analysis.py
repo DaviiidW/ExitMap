@@ -8,12 +8,16 @@ Each analysis covers one account, so the same domain in two accounts gives two s
 - Management link: catalog → link in the emails → homepage. Bodies are only fetched for the
   registered/access evidence of services that are not in the catalog (plan §4 "Gmail").
 - Unsubscribe method: from the most recent email with a usable ``List-Unsubscribe``.
+
+``save_analysis`` merges a complete analysis into the database in one transaction
+(plan §3 "Fusión"; spec F2-8, F7-1, F8-3, F8-4, F8-6).
 """
 
 from collections import Counter
 from collections.abc import Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
+from enum import StrEnum
 from email.header import decode_header, make_header
 from email.utils import parseaddr, parsedate_to_datetime
 
@@ -21,9 +25,10 @@ from exitmap.domain.catalog import Catalog, default_catalog
 from exitmap.domain.detection import Rules, detect
 from exitmap.domain.domains import registrable_domain
 from exitmap.domain.links import management_link
-from exitmap.domain.models import Evidence, RelationType, Service
+from exitmap.domain.models import Account, Evidence, RelationType, Service, State
 from exitmap.domain.unsubscribe import UnsubscribeOption, parse_unsubscribe
 from exitmap.providers.base import Folders, MailProvider, Period
+from exitmap.storage.db import Database
 
 BODY_TYPES = frozenset({RelationType.REGISTERED, RelationType.ACCESS})
 
@@ -164,3 +169,107 @@ def analyse(
     for message_id in provider.list_message_ids(period, folders):
         aggregator.add(message_id, provider.get_headers(message_id))
     return aggregator.services(provider)
+
+
+class AnalysisMode(StrEnum):
+    """What a re-analysis reads (spec F8-1)."""
+
+    ALL = "all"
+    NEW_ONLY = "new_only"
+
+
+def new_only_period(account: Account) -> Period:
+    """Period of a "new emails only" analysis: since the last complete one (plan §3)."""
+    return Period(start=account.last_complete_analysis_at)
+
+
+def save_analysis(
+    db: Database,
+    account_id: int,
+    detected: list[DetectedService],
+    mode: AnalysisMode = AnalysisMode.ALL,
+    completed_at: datetime | None = None,
+) -> None:
+    """Merge a complete analysis of one account into the database, all or nothing.
+
+    - New services are saved as *pending* (F7-1).
+    - ``ALL``: statistics, links and evidence are recalculated; ``NEW_ONLY``: emails not
+      already in the evidence are added to the counts and the evidence. The state is kept
+      in both modes (F8-3).
+    - Services that were not detected again stay as they are (F8-6).
+    - An *unsubscribed* service with an email not seen before and sent after the state
+      change gets an alert (F8-4).
+    - ``last_complete_analysis_at`` becomes ``completed_at`` (by default, now).
+    """
+    completed_at = completed_at or datetime.now(UTC)
+    with db.transaction():
+        for item in detected:
+            _merge(db, account_id, item, mode)
+        db.set_last_complete_analysis(account_id, completed_at)
+
+
+def _merge(db: Database, account_id: int, item: DetectedService, mode: AnalysisMode) -> None:
+    detected = item.service
+    existing = db.find_service(account_id, detected.domain)
+    if existing is None:
+        service = replace(detected, account_id=account_id, id=None)
+        db.save_service(service)
+        _add_evidence(db, service.id, item.evidence)
+        return
+
+    seen = {e.provider_message_id for e in db.list_evidence(existing.id)}
+    unseen = [e for e in item.evidence if e.provider_message_id not in seen]
+    if mode is AnalysisMode.ALL:
+        service = replace(
+            detected,
+            account_id=account_id,
+            state=existing.state,
+            state_changed_at=existing.state_changed_at,
+            has_alert=existing.has_alert,
+            id=existing.id,
+        )
+        db.delete_evidence(existing.id)
+        new_evidence = item.evidence
+    else:
+        service = _add_new_emails(existing, detected, unseen)
+        new_evidence = unseen
+
+    if _needs_alert(service, unseen):
+        service.has_alert = True
+    db.save_service(service)
+    _add_evidence(db, service.id, new_evidence)
+
+
+def _add_new_emails(existing: Service, detected: Service, unseen: list[Evidence]) -> Service:
+    """``NEW_ONLY``: add the emails not seen before to an existing service."""
+    if not unseen:
+        return replace(existing)
+    dates = [e.sent_at for e in unseen]
+    first = min(dates + ([existing.first_email_at] if existing.first_email_at else []))
+    last = max(dates + ([existing.last_email_at] if existing.last_email_at else []))
+    service = replace(
+        existing,
+        relation_types=existing.relation_types | {e.relation_type for e in unseen},
+        first_email_at=first,
+        last_email_at=last,
+        email_count=existing.email_count + len({e.provider_message_id for e in unseen}),
+    )
+    if existing.manage_url is None:
+        service.manage_url = detected.manage_url
+        service.manage_url_source = detected.manage_url_source
+    if detected.unsubscribe_method is not None:
+        service.unsubscribe_method = detected.unsubscribe_method
+        service.unsubscribe_target = detected.unsubscribe_target
+    return service
+
+
+def _needs_alert(service: Service, unseen: list[Evidence]) -> bool:
+    if service.state is not State.UNSUBSCRIBED:
+        return False
+    changed_at = service.state_changed_at
+    return any(changed_at is None or e.sent_at > changed_at for e in unseen)
+
+
+def _add_evidence(db: Database, service_id: int, evidence: list[Evidence]) -> None:
+    for item in evidence:
+        db.add_evidence(replace(item, service_id=service_id, id=None))

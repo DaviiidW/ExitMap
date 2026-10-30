@@ -110,7 +110,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Hecho cuando: test de integración con el buzón de prueba: cada servicio esperado aparece
     con sus tipos (F2-7); mismo servicio en dos cuentas = dos entradas (F3-1).
 
-- [ ] T015 — Fusión y guardado
+- [x] T015 — Fusión y guardado
   - Qué: guardado en una transacción; modo "todos" y "solo nuevos"; conservar estados;
     mantener servicios no re-detectados; activar aviso tras *baja realizada*; actualizar
     `last_complete_analysis_at`.

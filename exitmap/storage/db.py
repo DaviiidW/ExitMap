@@ -3,6 +3,8 @@
 import os
 import sqlite3
 import sys
+from collections.abc import Iterator
+from contextlib import AbstractContextManager, contextmanager, nullcontext
 from datetime import datetime, timezone
 from enum import StrEnum
 from pathlib import Path
@@ -150,6 +152,7 @@ class Database:
         self.conn.execute("PRAGMA foreign_keys = ON")
         with self.conn:
             self.conn.executescript(SCHEMA)
+        self._in_transaction = False
 
     def close(self) -> None:
         self.conn.close()
@@ -160,6 +163,26 @@ class Database:
     def __exit__(self, *exc_info: object) -> None:
         self.close()
 
+    @contextmanager
+    def transaction(self) -> Iterator["Database"]:
+        """Group several writes in one transaction: all are committed or none (spec F2-5/6).
+
+        Inside the block the repository methods do not commit on their own; an exception
+        rolls everything back.
+        """
+        if self._in_transaction:
+            raise RuntimeError("Nested transactions are not supported")
+        self._in_transaction = True
+        try:
+            with self.conn:
+                yield self
+        finally:
+            self._in_transaction = False
+
+    def _write(self) -> AbstractContextManager[object]:
+        """Commit each write on its own, unless it is part of ``transaction()``."""
+        return nullcontext() if self._in_transaction else self.conn
+
     def add_account(self, account: Account) -> Account:
         """Insert an account and return it with ``id`` and ``created_at`` set.
 
@@ -167,7 +190,7 @@ class Database:
         """
         created_at = account.created_at or datetime.now(timezone.utc)
         try:
-            with self.conn:
+            with self._write():
                 cursor = self.conn.execute(
                     "INSERT INTO accounts (provider, email, client_registration_ref,"
                     " last_complete_analysis_at, created_at) VALUES (?, ?, ?, ?, ?)",
@@ -199,9 +222,17 @@ class Database:
             for row in rows
         ]
 
+    def set_last_complete_analysis(self, account_id: int, completed_at: datetime) -> None:
+        """Record when the account's last complete analysis happened (spec F8-1)."""
+        with self._write():
+            self.conn.execute(
+                "UPDATE accounts SET last_complete_analysis_at = ? WHERE id = ?",
+                (_to_text(completed_at), account_id),
+            )
+
     def delete_account(self, account_id: int) -> None:
         """Delete an account and, by cascade, its services and evidence (spec F9-2)."""
-        with self.conn:
+        with self._write():
             self.conn.execute("DELETE FROM accounts WHERE id = ?", (account_id,))
 
     def save_service(self, service: Service) -> Service:
@@ -224,7 +255,7 @@ class Database:
             _enum_value(service.unsubscribe_method),
             service.unsubscribe_target,
         )
-        with self.conn:
+        with self._write():
             if service.id is None:
                 cursor = self.conn.execute(
                     f"INSERT INTO services ({', '.join(_SERVICE_COLUMNS)})"
@@ -244,6 +275,13 @@ class Database:
         row = self.conn.execute("SELECT * FROM services WHERE id = ?", (service_id,)).fetchone()
         return _service_from_row(row) if row is not None else None
 
+    def find_service(self, account_id: int, domain: str) -> Service | None:
+        """The service of ``domain`` in one account, if it was already detected."""
+        row = self.conn.execute(
+            "SELECT * FROM services WHERE account_id = ? AND domain = ?", (account_id, domain)
+        ).fetchone()
+        return _service_from_row(row) if row is not None else None
+
     def list_services(self, account_id: int | None = None) -> list[Service]:
         """List the services of one account, or of all accounts if ``account_id`` is None."""
         if account_id is None:
@@ -259,7 +297,7 @@ class Database:
     ) -> None:
         """Change a service's state and record when it changed (spec F7-2, F8-4)."""
         changed_at = changed_at or datetime.now(timezone.utc)
-        with self.conn:
+        with self._write():
             self.conn.execute(
                 "UPDATE services SET state = ?, state_changed_at = ? WHERE id = ?",
                 (state.value, _to_text(changed_at), service_id),
@@ -274,13 +312,13 @@ class Database:
         self._set_has_alert(service_id, False)
 
     def _set_has_alert(self, service_id: int, value: bool) -> None:
-        with self.conn:
+        with self._write():
             self.conn.execute(
                 "UPDATE services SET has_alert = ? WHERE id = ?", (int(value), service_id)
             )
 
     def add_evidence(self, evidence: Evidence) -> Evidence:
-        with self.conn:
+        with self._write():
             cursor = self.conn.execute(
                 "INSERT INTO evidence (service_id, provider_message_id, subject, sent_at,"
                 " relation_type) VALUES (?, ?, ?, ?, ?)",
@@ -294,6 +332,11 @@ class Database:
             )
         evidence.id = cursor.lastrowid
         return evidence
+
+    def delete_evidence(self, service_id: int) -> None:
+        """Remove the evidence of a service, to replace it after a full analysis."""
+        with self._write():
+            self.conn.execute("DELETE FROM evidence WHERE service_id = ?", (service_id,))
 
     def list_evidence(self, service_id: int) -> list[Evidence]:
         rows = self.conn.execute(
@@ -316,7 +359,7 @@ class Database:
         return row["value"] if row is not None else default
 
     def set_setting(self, key: str, value: str) -> None:
-        with self.conn:
+        with self._write():
             self.conn.execute(
                 "INSERT INTO settings (key, value) VALUES (?, ?)"
                 " ON CONFLICT (key) DO UPDATE SET value = excluded.value",
