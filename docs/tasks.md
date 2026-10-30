@@ -80,7 +80,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Hecho cuando: tests de carga, búsqueda, dominio inexistente y JSON inválido; el
     desarrollador verifica a mano que los enlaces del catálogo inicial funcionan.
 
-- [ ] T011 — Lectura de `List-Unsubscribe`
+- [x] T011 — Lectura de `List-Unsubscribe`
   - Qué: función que, a partir de `List-Unsubscribe` y `List-Unsubscribe-Post`, devuelve el
     método (`one_click`, `web`, `mailto`) y el destino.
   - Referencia: plan §4 "Baja"; spec F5.
