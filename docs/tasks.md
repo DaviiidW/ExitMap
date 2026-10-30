@@ -144,7 +144,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Hecho cuando: tests con backend de `keyring` falso: guardar, leer, borrar, llavero
     ausente detectado.
 
-- [ ] T019 — Almacén cifrado con contraseña
+- [x] T019 — Almacén cifrado con contraseña
   - Qué: `EncryptedFileStore` (scrypt + Fernet, sal aleatoria), contraseña incorrecta,
     restablecer.
   - Referencia: plan §7; spec F10-3, F10-4, F10-5.
