@@ -100,7 +100,9 @@ evidence(id, service_id → services, provider_message_id, subject, sent_at, rel
 settings(key, value)                                         -- session_mode, etc.
 ```
 
-- `state` ∈ {pendiente, conservar, baja_realizada, acceso_revocado, cuenta_eliminada, descartado}.
+- `state` ∈ {pending, keep, unsubscribed, access_revoked, account_deleted, dismissed}
+  (*pendiente*, *conservar*, *baja realizada*, *acceso revocado*, *cuenta eliminada*,
+  *descartado*; los textos en español que ve el usuario están en `ui/strings_es.py`).
 - Borrar una cuenta = `DELETE` en cascada + borrado de sus credenciales (F9-2).
 - Los asuntos de la evidencia se guardan en local (permitido); nunca van a los logs.
 
@@ -108,7 +110,7 @@ settings(key, value)                                         -- session_mode, et
 - Análisis "todos los correos": recalcula estadísticas y evidencia; **conserva `state`**.
 - Servicios existentes que no aparecen en un re-análisis completo: se mantienen sin cambios.
 - "Solo nuevos": consulta desde `last_complete_analysis_at`; suma recuentos y añade evidencia.
-- Aviso F8-4: `state = baja_realizada` y correo nuevo con fecha > `state_changed_at` → `has_alert = 1`.
+- Aviso F8-4: `state = unsubscribed` y correo nuevo con fecha > `state_changed_at` → `has_alert = 1`.
   Abrir la ficha pone `has_alert = 0` (F8-5).
 - Cancelación o interrupción: no se hace `COMMIT` → quedan los datos del último análisis completo.
 - Marca de interrupción (F2-6): al empezar un análisis se guarda `analysis_in_progress` en
