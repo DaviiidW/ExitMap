@@ -130,7 +130,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
 
 ## Fase 4 — Credenciales
 
-- [ ] T017 — Verificar y añadir dependencias
+- [x] T017 — Verificar y añadir dependencias
   - Qué: comprobar mantenimiento, licencia y avisos de seguridad de `keyring` y
     `cryptography`; comunicarlo al desarrollador; fijar versiones en `pyproject.toml`.
   - Referencia: constitución 3; plan §1.
