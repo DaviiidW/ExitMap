@@ -59,7 +59,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
 
 ## Fase 2 — Detección (lógica pura)
 
-- [ ] T008 — Dominio registrable
+- [x] T008 — Dominio registrable
   - Qué: `domain/domains.py` con lista corta de sufijos compuestos.
   - Referencia: plan §5; spec §3 "Servicio".
   - Hecho cuando: tests: `news.amazon.es`→`amazon.es`, `mail.bbc.co.uk`→`bbc.co.uk`,
