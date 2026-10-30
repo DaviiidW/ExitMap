@@ -42,7 +42,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Referencia: plan §2, §3; spec F7 (tabla de estados).
   - Hecho cuando: tests unitarios de valores y valores por defecto (estado *pendiente*).
 
-- [ ] T006 — Esquema SQLite y cuentas
+- [x] T006 — Esquema SQLite y cuentas
   - Qué: `storage/db.py`: creación del esquema (`accounts`, `services`, `evidence`,
     `settings`), claves foráneas en cascada, alta/listado/borrado de cuentas, `UNIQUE` por
     proveedor+email.
