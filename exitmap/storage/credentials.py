@@ -10,6 +10,8 @@ import json
 import os
 import secrets
 import sys
+from dataclasses import dataclass
+from enum import StrEnum
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 
@@ -20,10 +22,13 @@ from keyring.backends import fail, null
 from keyring.errors import KeyringError, PasswordDeleteError
 
 from exitmap.errors import KeyringUnavailableError, WrongPasswordError
+from exitmap.storage.db import Database
 
 KEYRING_SERVICE = "ExitMap"
 CREDENTIALS_FILE_NAME = "credentials.enc"
 CREDENTIALS_FILE_MODE = 0o600
+
+SESSION_MODE_KEY = "session_mode"
 
 SALT_BYTES = 16
 # scrypt cost (n=2^15, r=8, p=1) as recommended for interactive logins; needs 32 MiB.
@@ -196,3 +201,48 @@ class EncryptedFileStore:
             os.chmod(tmp, CREDENTIALS_FILE_MODE)
         tmp.write_text(content, encoding="utf-8")
         os.replace(tmp, self.path)
+
+
+def session_mode(db: Database) -> bool:
+    """Whether the session mode setting is on (spec F10-6); off by default."""
+    return db.get_setting(SESSION_MODE_KEY) == "1"
+
+
+def set_session_mode(db: Database, enabled: bool) -> None:
+    db.set_setting(SESSION_MODE_KEY, "1" if enabled else "0")
+
+
+class StoreNeed(StrEnum):
+    """What the user has to do before a store can be used."""
+
+    NOTHING = "nothing"
+    PASSWORD = "password"  # enter the master password (F10-3)
+    CHOICE = "choice"  # choose master password or session mode (F10-2)
+
+
+@dataclass(frozen=True)
+class StoreDecision:
+    """``store`` is set only when ``need`` is ``NOTHING``."""
+
+    need: StoreNeed
+    store: CredentialStore | None = None
+
+
+def choose_store(
+    db: Database, data_dir: Path, backend: KeyringBackend | None = None
+) -> StoreDecision:
+    """Pick the credential store (plan §7).
+
+    1. Session mode on → memory only, nothing on disk (F10-6, F10-7).
+    2. Keyring available → keyring (F10-1).
+    3. No keyring → master password if the encrypted file exists (F10-3), otherwise the
+       user must choose between a master password and session mode (F10-2).
+    """
+    if session_mode(db):
+        return StoreDecision(StoreNeed.NOTHING, MemoryStore())
+    backend = keyring.get_keyring() if backend is None else backend
+    if keyring_available(backend):
+        return StoreDecision(StoreNeed.NOTHING, KeyringStore(backend))
+    if EncryptedFileStore.exists(Path(data_dir) / CREDENTIALS_FILE_NAME):
+        return StoreDecision(StoreNeed.PASSWORD)
+    return StoreDecision(StoreNeed.CHOICE)

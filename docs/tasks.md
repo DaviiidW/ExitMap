@@ -151,7 +151,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Hecho cuando: tests: ida y vuelta, el fichero no contiene el token en claro, contraseña
     incorrecta da error comprensible, restablecer borra credenciales y conserva la BD.
 
-- [ ] T020 — Política de credenciales
+- [x] T020 — Política de credenciales
   - Qué: elegir almacén según modo sesión (ajuste), llavero disponible o necesidad de elegir
     contraseña/sesión.
   - Referencia: plan §7; spec F10-1, F10-2, F10-6, F10-7.
