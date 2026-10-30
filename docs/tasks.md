@@ -36,7 +36,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Hecho cuando: test que registra mensajes con asunto/token simulados y comprueba que el
     fichero no los contiene.
 
-- [ ] T005 — Modelos de dominio
+- [x] T005 — Modelos de dominio
   - Qué: `domain/models.py`: `State`, `RelationType`, `LinkSource`, `UnsubscribeMethod`,
     `Provider` y dataclasses `Account`, `Service`, `Evidence`.
   - Referencia: plan §2, §3; spec F7 (tabla de estados).
