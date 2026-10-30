@@ -25,11 +25,16 @@ borrado o gestión de permisos de cada servicio que eligió.
 
 Ambos pueden conectar varias cuentas de correo (Gmail y Outlook).
 
+Antes de conectar la primera cuenta de cada proveedor, el usuario final tiene que crear su
+propio registro de la app en Google y/o Microsoft siguiendo la guía del README. El usuario
+final no técnico necesitará seguir esa guía (o recibir ayuda) la primera vez.
+
 La interfaz de la v1 está en español.
 
 ## 3. Glosario
 
-- **Servicio:** empresa o web identificada por un dominio remitente. En la v1, cada dominio
+- **Servicio:** empresa o web identificada por el dominio registrable del remitente (p. ej.
+  `news.amazon.es` → `amazon.es`). En la v1, cada dominio
   es un servicio distinto y cada par (servicio, cuenta de correo) es una entrada distinta
   de la lista.
 - **Tipo de relación:** *cuenta registrada*, *suscripción comercial* o *acceso/permiso
@@ -51,15 +56,18 @@ para que ExitMap pueda analizarlas.
 **Criterios de aceptación:**
 1. Dado que no hay cuentas conectadas, cuando el usuario final elige "Conectar cuenta",
    entonces puede elegir entre Gmail y Outlook.
-2. Dado que el usuario final autoriza el acceso, cuando la conexión termina, entonces la
+2. Dado que no hay registro configurado para el proveedor elegido, cuando el usuario final
+   elige conectar, entonces la app le pide los datos de su registro y le enlaza a la guía;
+   si los datos son incorrectos, la app explica qué falla.
+3. Dado que el usuario final autoriza el acceso, cuando la conexión termina, entonces la
    cuenta aparece en la lista de cuentas conectadas, con su dirección de correo.
-3. Dado que la app pide permisos al proveedor, cuando se muestra la pantalla de
+4. Dado que la app pide permisos al proveedor, cuando se muestra la pantalla de
    autorización, entonces solo se pide acceso de lectura al correo.
-4. Dado que hay una cuenta conectada, cuando el usuario final conecta otra, entonces
+5. Dado que hay una cuenta conectada, cuando el usuario final conecta otra, entonces
    ambas aparecen en la lista de cuentas conectadas.
-5. Dado que el usuario final cancela o deniega la autorización, cuando vuelve a la app,
+6. Dado que el usuario final cancela o deniega la autorización, cuando vuelve a la app,
    entonces no se añade ninguna cuenta y se muestra un mensaje que explica qué ha pasado.
-6. Dado que una cuenta ya está conectada, cuando el usuario final vuelve a conectarla,
+7. Dado que una cuenta ya está conectada, cuando el usuario final vuelve a conectarla,
    entonces no se duplica y se le informa de que ya estaba conectada.
 
 ### F2. Analizar el buzón
@@ -203,6 +211,8 @@ decidido sobre cada servicio.
    con un aviso en la lista.
 5. Dado un servicio con aviso, cuando el usuario final abre su ficha, entonces el aviso
    desaparece.
+6. Dado un servicio de un análisis anterior que no aparece en un re-análisis completo,
+   cuando termina el re-análisis, entonces el servicio se mantiene con sus datos y su estado.
 
 ### F9. Quitar una cuenta y borrar sus datos
 
@@ -215,11 +225,35 @@ suyo en mi equipo ni ningún permiso activo.
    no se hace nada hasta que confirme.
 2. Dado que el usuario final confirma, cuando termina el proceso, entonces la cuenta y todos
    sus servicios desaparecen de la app, y al reabrirla no reaparecen.
-3. Dado que el usuario final confirma, cuando termina el proceso, entonces la app ha retirado
-   su permiso de acceso en el proveedor (Google o Microsoft).
-4. Dado que no se puede retirar el permiso en el proveedor (p. ej. sin conexión), cuando
-   ocurre, entonces los datos locales se borran igualmente y se informa al usuario final de
+3. Dada una cuenta de Gmail, cuando el usuario final confirma y termina el proceso, entonces
+   la app ha retirado su permiso de acceso en Google.
+4. Dada una cuenta de Outlook (Microsoft no permite que la app retire su propio permiso), o
+   dado que no se puede retirar el permiso en Google (p. ej. sin conexión), cuando termina el
+   proceso, entonces los datos locales se borran igualmente y se informa al usuario final de
    que debe retirar el permiso manualmente, indicándole dónde.
+
+### F10. Guardar credenciales
+
+**Historia:** Como usuario final, quiero que el acceso a mis cuentas se guarde de forma
+segura, o no se guarde si así lo prefiero.
+
+**Criterios de aceptación:**
+1. Dado que el sistema tiene llavero disponible y el modo sesión está desactivado, cuando el
+   usuario final conecta una cuenta, entonces las credenciales se guardan en el llavero y,
+   al reabrir la app, la cuenta sigue conectada.
+2. Dado que el sistema no tiene llavero, cuando el usuario final conecta su primera cuenta,
+   entonces debe elegir entre crear una contraseña maestra o usar el modo sesión.
+3. Dado que se usa contraseña maestra, cuando el usuario final abre la app, entonces se le
+   pide la contraseña antes de acceder a sus cuentas.
+4. Dado que se usa contraseña maestra, cuando el usuario final introduce una incorrecta,
+   entonces se le indica que es incorrecta y puede volver a intentarlo.
+5. Dado que el usuario final ha olvidado la contraseña maestra, cuando elige
+   restablecerla, entonces se borran las credenciales cifradas, crea una contraseña nueva y
+   debe reconectar sus cuentas; los resultados y los estados se conservan.
+6. Dado cualquier sistema, cuando el usuario final activa el modo sesión en los ajustes,
+   entonces las credenciales no se guardan en disco.
+7. Dado que el modo sesión está activo, cuando el usuario final cierra y reabre la app,
+   entonces debe reconectar sus cuentas, y los resultados y los estados se conservan.
 
 ## 5. Casos límite y errores
 
@@ -230,7 +264,7 @@ suyo en mi equipo ni ningún permiso activo.
 - **Permiso caducado o retirado desde Google/Microsoft:** la app indica qué cuenta está
   afectada y ofrece volver a conectarla, sin perder los resultados ni los estados guardados.
 - **Análisis sin servicios detectados:** se aplica F2-10.
-- **Cuenta ya conectada:** se aplica F1-6.
+- **Cuenta ya conectada:** se aplica F1-7.
 - **Servicio sin enlace en catálogo ni en correos:** se usa la web principal del dominio
   (F4-3).
 - **Cualquier error:** el mensaje indica qué ha fallado y, si existe, la solución más
