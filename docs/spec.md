@@ -26,8 +26,9 @@ borrado o gestión de permisos de cada servicio que eligió.
 Ambos pueden conectar varias cuentas de correo (Gmail y Outlook).
 
 Antes de conectar la primera cuenta de cada proveedor, el usuario final tiene que crear su
-propio registro de la app en Google y/o Microsoft siguiendo la guía del README. El usuario
-final no técnico necesitará seguir esa guía (o recibir ayuda) la primera vez.
+propio registro de la app en Google y/o Microsoft siguiendo la guía de registro
+(`docs/guia-registro.md`, enlazada desde el README). El usuario final no técnico
+necesitará seguir esa guía (o recibir ayuda) la primera vez.
 
 La interfaz de la v1 está en español.
 

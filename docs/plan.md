@@ -5,7 +5,7 @@ Describe cómo se construye lo definido en `spec.md`, cumpliendo `constitution.m
 **Contexto de uso:** uso propio, repositorio público en GitHub con licencia MIT. No se
 empaqueta ni se distribuye: se ejecuta desde el código, directamente o mediante un acceso
 directo con icono que crea un script. Cada usuario usa su propio registro OAuth en Google y
-Microsoft, siguiendo la guía del README.
+Microsoft, siguiendo la guía de registro (`docs/guia-registro.md`, enlazada desde el README).
 
 ## 1. Stack
 
@@ -45,6 +45,7 @@ exitmap/
     catalog.py           # carga data/catalog.json
   providers/
     base.py              # Protocol MailProvider
+    http.py              # GET/POST JSON con urllib, reintentos ante 429, error "sin conexión"
     oauth.py             # flujo loopback + PKCE, refresco de tokens
     gmail.py             # Gmail API
     outlook.py           # Microsoft Graph
@@ -110,8 +111,16 @@ settings(key, value)                                         -- session_mode, et
 - Aviso F8-4: `state = baja_realizada` y correo nuevo con fecha > `state_changed_at` → `has_alert = 1`.
   Abrir la ficha pone `has_alert = 0` (F8-5).
 - Cancelación o interrupción: no se hace `COMMIT` → quedan los datos del último análisis completo.
+- Marca de interrupción (F2-6): al empezar un análisis se guarda `analysis_in_progress` en
+  `settings` y se borra al terminar o cancelar. Si sigue presente al arrancar la app, se avisa
+  al usuario de que el análisis se interrumpió y se borra la marca.
 
 ## 4. Integraciones externas
+
+**Detección de "sin conexión":** no hay comprobación aparte. Un error de red en cualquier
+petición (`providers/http.py`) lanza la excepción "sin conexión"; la interfaz pasa a modo sin
+conexión (deshabilita analizar, baja automática y revocación) hasta el siguiente intento que
+tenga éxito.
 
 **OAuth (ambos):** navegador del sistema → redirección a `http://127.0.0.1:<puerto aleatorio>`,
 PKCE S256, parámetro `state` verificado, servidor local de una sola petición con tiempo límite.
@@ -207,7 +216,7 @@ propios (principio 6).
 | Cuotas de Gmail: buzones grandes tardan minutos | Progreso visible, solo cabeceras, cuerpo solo cuando hace falta; reintento con espera ante 429. |
 | `internetMessageHeaders` en listados de Graph puede no estar disponible | Prueba temprana; si falla, petición por mensaje con `$select`. |
 | Heurísticas imprecisas (falsos positivos/negativos) | Evidencia visible + estado *descartado*; reglas en JSON fácil de ampliar. |
-| Pantalla "app no verificada" de Google asusta al usuario | Explicado en la guía del README. |
+| Pantalla "app no verificada" de Google asusta al usuario | Explicado en la guía de registro (`docs/guia-registro.md`, enlazada desde el README). |
 | Linux sin `python3-tk` o sin Secret Service | Mensaje claro al arrancar; política de credenciales sin llavero. |
 | OAuth escrito a mano | Flujo estándar mínimo, tests dedicados. |
 | Dominio registrable aproximado | Lista de sufijos ampliable; agrupación real fuera de alcance. |
