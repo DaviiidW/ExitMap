@@ -6,6 +6,9 @@ from collections.abc import Mapping
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 
+from keyring.backend import KeyringBackend
+from keyring.errors import KeyringError, PasswordDeleteError
+
 from exitmap.domain.models import Provider
 from exitmap.providers.base import Folders, Period, RevokeNotSupported
 
@@ -88,3 +91,32 @@ class ControlledMailProvider(FakeMailProvider):
         if self.headers_read == self.fail_at:
             raise self.error
         return super().get_headers(message_id)
+
+
+class FakeKeyring(KeyringBackend):
+    """In-memory ``keyring`` backend, so tests never touch the real system keyring."""
+
+    priority = 1
+
+    def __init__(self, fail: bool = False) -> None:
+        super().__init__()
+        self.passwords: dict[tuple[str, str], str] = {}
+        self.fail = fail
+
+    def _check(self) -> None:
+        if self.fail:
+            raise KeyringError("keyring locked")
+
+    def get_password(self, service: str, username: str) -> str | None:
+        self._check()
+        return self.passwords.get((service, username))
+
+    def set_password(self, service: str, username: str, password: str) -> None:
+        self._check()
+        self.passwords[(service, username)] = password
+
+    def delete_password(self, service: str, username: str) -> None:
+        self._check()
+        if (service, username) not in self.passwords:
+            raise PasswordDeleteError("not found")
+        del self.passwords[(service, username)]

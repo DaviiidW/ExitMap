@@ -137,7 +137,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Hecho cuando: el desarrollador recibe el informe y lo aprueba; `pip install -e .[dev]` y
     `pytest` pasan.
 
-- [ ] T018 — Almacén en memoria y en llavero
+- [x] T018 — Almacén en memoria y en llavero
   - Qué: `storage/credentials.py`: interfaz `CredentialStore`, `MemoryStore`, `KeyringStore`
     y detección de llavero disponible.
   - Referencia: plan §7; spec F10-1.

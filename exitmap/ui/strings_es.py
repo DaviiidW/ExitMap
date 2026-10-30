@@ -54,4 +54,8 @@ ERRORS: dict[str, tuple[str, str]] = {
         "La contraseña maestra es incorrecta.",
         "Vuelve a escribirla. Si la has olvidado, puedes restablecerla y reconectar tus cuentas.",
     ),
+    "keyring_unavailable": (
+        "No se ha podido usar el llavero del sistema para guardar o leer el acceso a tus cuentas.",
+        "Desbloquea el llavero del sistema y vuelve a intentarlo, o activa el modo sesión en los ajustes.",
+    ),
 }

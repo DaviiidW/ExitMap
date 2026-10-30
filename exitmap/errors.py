@@ -71,3 +71,7 @@ class CatalogError(ExitMapError):
 
 class WrongPasswordError(ExitMapError):
     key = "wrong_password"
+
+
+class KeyringUnavailableError(ExitMapError):
+    key = "keyring_unavailable"
