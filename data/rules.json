@@ -1,0 +1,35 @@
+{
+  "_comment": "Subject patterns (Python regex, case-insensitive) for detection, plan §5. Write them lowercase and without accents: subjects are normalised before matching. Subscriptions are detected by the List-Unsubscribe header, not here.",
+  "registered": [
+    "\\bwelcome\\b",
+    "\\bbienvenid[oa]s?\\b",
+    "\\bverify your (email|e-mail|account|address)\\b",
+    "\\bconfirm your (email|e-mail|account|address|registration|subscription)\\b",
+    "\\b(activate|activation of) your account\\b",
+    "\\b(verifica|confirma|activa) tu (cuenta|correo|email|e-mail|direccion|registro)\\b",
+    "\\b(thanks|thank you) for (signing up|registering|joining|creating)\\b",
+    "\\bgracias por (registrarte|unirte|crear)\\b",
+    "\\byour account (has been|was) created\\b",
+    "\\btu cuenta (ha sido|se ha) cread[ao]\\b",
+    "\\b(reset|change|recover) your password\\b",
+    "\\bpassword (reset|change|recovery)\\b",
+    "\\b(restablece|restablecer|cambia|cambiar|recupera|recuperar) (tu |la )?contrasena\\b"
+  ],
+  "access": [
+    "\\bnew (app|application|device|integration) (connected|authorized|added)\\b",
+    "\\bnueva (app|aplicacion|integracion) (conectada|autorizada)\\b",
+    "\\bnuevo dispositivo (conectado|autorizado)\\b",
+    "\\b(has|have) (been )?(granted|authorized) access\\b",
+    "\\b(granted|authorized) access to\\b",
+    "\\bse ha (concedido|autorizado) (el )?acceso\\b",
+    "\\b(ha|has) (concedido|autorizado) acceso\\b",
+    "\\b(new|your) api (key|token)\\b",
+    "\\b(nueva|tu) clave de api\\b",
+    "\\bnew (sign-in|sign in|login|log-in)\\b",
+    "\\bnuevo inicio de sesion\\b",
+    "\\b(signed|logged) in from a new\\b",
+    "\\b(integration|integracion) (enabled|activated|activada|habilitada)\\b",
+    "\\bauthorization (granted|request)\\b",
+    "\\bautorizacion (concedida|de acceso)\\b"
+  ]
+}

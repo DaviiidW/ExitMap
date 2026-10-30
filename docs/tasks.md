@@ -65,7 +65,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Hecho cuando: tests: `news.amazon.es`→`amazon.es`, `mail.bbc.co.uk`→`bbc.co.uk`,
     mayúsculas, direcciones con nombre visible.
 
-- [ ] T009 — Reglas de detección
+- [x] T009 — Reglas de detección
   - Qué: `data/rules.json` (patrones ES/EN) y `domain/detection.py`: cabeceras → tipos de
     relación; correo sin regla → ninguno.
   - Referencia: plan §5.
