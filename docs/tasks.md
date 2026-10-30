@@ -103,7 +103,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Hecho cuando: test que comprueba que el falso cumple el Protocol y filtra por periodo y
     carpetas.
 
-- [ ] T014 — Agregación de un análisis
+- [x] T014 — Agregación de un análisis
   - Qué: `app/analysis.py`: de los mensajes a servicios en memoria (tipos, fechas,
     recuento, nombre, evidencia, enlace de gestión y método de baja).
   - Referencia: spec F2-7, F3-1, F4-1..3; plan §5.
