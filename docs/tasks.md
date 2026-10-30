@@ -29,7 +29,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Hecho cuando: tests que comprueban que cada excepción da un mensaje en español no vacío y
     sin datos sensibles.
 
-- [ ] T004 — Logging sin datos sensibles
+- [x] T004 — Logging sin datos sensibles
   - Qué: `logging_setup.py` con fichero de log en la carpeta de datos y filtro que elimina
     asuntos, cuerpos, direcciones y tokens.
   - Referencia: constitución 6; plan §7.
