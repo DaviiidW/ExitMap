@@ -50,7 +50,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Hecho cuando: tests de integración con BD temporal: crear, listar, no duplicar, borrar en
     cascada.
 
-- [ ] T007 — Repositorio de servicios, evidencia y ajustes
+- [x] T007 — Repositorio de servicios, evidencia y ajustes
   - Qué: leer/guardar servicios y evidencia, cambiar estado (con `state_changed_at`), activar
     y quitar `has_alert`, leer/escribir `settings`.
   - Referencia: plan §3; spec F7-1, F7-2.
