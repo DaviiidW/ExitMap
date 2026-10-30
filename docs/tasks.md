@@ -87,7 +87,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Hecho cuando: tests con cabecera solo https, https + Post, solo mailto, ambos, ausente y
     mal formada.
 
-- [ ] T012 — Enlace de gestión
+- [x] T012 — Enlace de gestión
   - Qué: `domain/links.py`: extracción de enlaces del HTML con `html.parser` y orden
     catálogo → correo → web principal, devolviendo URL y origen.
   - Referencia: spec F4-3, F4-4; plan §4, §5.
