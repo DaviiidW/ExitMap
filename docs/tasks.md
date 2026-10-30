@@ -15,7 +15,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
 
 ## Fase 1 — Base
 
-- [ ] T002 — Carpeta de datos
+- [x] T002 — Carpeta de datos
   - Qué: `config.py` con la ruta de datos por SO (`$XDG_DATA_HOME/exitmap`,
     `~/.local/share/exitmap`, `%APPDATA%\ExitMap`), creación y permisos 0700 en Linux.
   - Referencia: plan §2 "Carpeta de datos".
