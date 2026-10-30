@@ -95,7 +95,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
 
 ## Fase 3 — Análisis con proveedor falso
 
-- [ ] T013 — Puerto `MailProvider` y buzón de prueba
+- [x] T013 — Puerto `MailProvider` y buzón de prueba
   - Qué: `providers/base.py` (Protocol, `Period`, `Folders`, `RevokeNotSupported`),
     `FakeMailProvider` en `tests/` y `tests/fixtures/mailbox.json` sintético con casos
     conocidos.

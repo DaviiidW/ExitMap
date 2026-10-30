@@ -1,0 +1,153 @@
+{
+  "_comment": "Synthetic test mailbox (plan §6). Never real emails. One entry per account; folder is inbox, spam or trash. Known cases: registered (spotify.com, tienda-ejemplo.es, viajes-ejemplo.com in trash), subscription one-click / web / mailto (spotify.com, tienda-ejemplo.es, bbc.co.uk, amazon.es), access (github.com, microsoft.com), personal email without type, a spam-only service (sorteo-ejemplo.com) and spotify.com in both accounts.",
+  "accounts": {
+    "ana.prueba@gmail.com": {
+      "provider": "gmail",
+      "messages": [
+        {
+          "id": "g1",
+          "folder": "inbox",
+          "headers": {
+            "From": "Spotify <no-reply@spotify.com>",
+            "Subject": "Welcome to Spotify",
+            "Date": "Wed, 10 Mar 2021 09:15:00 +0000"
+          },
+          "body": "<html><body><p>Thanks for joining.</p></body></html>"
+        },
+        {
+          "id": "g2",
+          "folder": "inbox",
+          "headers": {
+            "From": "Spotify <news@spotify.com>",
+            "Subject": "Novedades de junio",
+            "Date": "Sun, 01 Jun 2025 18:00:00 +0000",
+            "List-Unsubscribe": "<https://www.spotify.com/unsubscribe/abc123>",
+            "List-Unsubscribe-Post": "List-Unsubscribe=One-Click"
+          },
+          "body": "<html><body><a href=\"https://www.spotify.com/account/\">Your account</a></body></html>"
+        },
+        {
+          "id": "g3",
+          "folder": "inbox",
+          "headers": {
+            "From": "Amazon.es <ofertas@news.amazon.es>",
+            "Subject": "Ofertas Black Friday",
+            "Date": "Wed, 20 Nov 2024 07:30:00 +0100",
+            "List-Unsubscribe": "<mailto:unsubscribe@news.amazon.es?subject=baja>, <https://www.amazon.es/gp/unsubscribe?x=1>"
+          },
+          "body": "<html><body><a href=\"https://www.amazon.es/ofertas\">Ver ofertas</a></body></html>"
+        },
+        {
+          "id": "g4",
+          "folder": "inbox",
+          "headers": {
+            "From": "Tienda Ejemplo <hola@tienda-ejemplo.es>",
+            "Subject": "Verifica tu cuenta",
+            "Date": "Fri, 05 May 2023 12:00:00 +0200"
+          },
+          "body": "<html><body><a href=\"https://tienda-ejemplo.es/verificar?t=1\">Verificar</a> <a href=\"https://tienda-ejemplo.es/mi-cuenta/ajustes\">Ajustes de tu cuenta</a></body></html>"
+        },
+        {
+          "id": "g5",
+          "folder": "inbox",
+          "headers": {
+            "From": "Tienda Ejemplo <news@mail.tienda-ejemplo.es>",
+            "Subject": "Ofertas de San Valentín",
+            "Date": "Sat, 14 Feb 2026 10:00:00 +0100",
+            "List-Unsubscribe": "<https://tienda-ejemplo.es/baja?u=1>"
+          },
+          "body": "<html><body><a href=\"https://tienda-ejemplo.es/ofertas\">Ofertas</a></body></html>"
+        },
+        {
+          "id": "g6",
+          "folder": "inbox",
+          "headers": {
+            "From": "GitHub <noreply@github.com>",
+            "Subject": "New app connected to your account",
+            "Date": "Tue, 09 Sep 2025 16:45:00 +0000"
+          },
+          "body": "<html><body><p>A new OAuth application was authorized.</p></body></html>"
+        },
+        {
+          "id": "g7",
+          "folder": "inbox",
+          "headers": {
+            "From": "BBC <newsletters@mail.bbc.co.uk>",
+            "Subject": "Your weekly newsletter",
+            "Date": "Mon, 15 Jan 2024 08:00:00 +0000",
+            "List-Unsubscribe": "<mailto:unsubscribe@mail.bbc.co.uk>"
+          },
+          "body": "<html><body><p>This week at the BBC.</p></body></html>"
+        },
+        {
+          "id": "g8",
+          "folder": "inbox",
+          "headers": {
+            "From": "Laura <laura.amiga@gmail.com>",
+            "Subject": "Cena el sábado",
+            "Date": "Fri, 04 Apr 2025 21:10:00 +0200"
+          },
+          "body": "<html><body><p>¿Te vienes?</p></body></html>"
+        },
+        {
+          "id": "g9",
+          "folder": "spam",
+          "headers": {
+            "From": "Sorteos <promo@sorteo-ejemplo.com>",
+            "Subject": "Has ganado un premio",
+            "Date": "Mon, 07 Jul 2025 11:11:00 +0000",
+            "List-Unsubscribe": "<https://sorteo-ejemplo.com/baja>"
+          },
+          "body": "<html><body><p>Reclama tu premio.</p></body></html>"
+        },
+        {
+          "id": "g10",
+          "folder": "trash",
+          "headers": {
+            "From": "Viajes Ejemplo <info@viajes-ejemplo.com>",
+            "Subject": "Bienvenido a Viajes Ejemplo",
+            "Date": "Mon, 08 Aug 2022 09:00:00 +0200"
+          },
+          "body": ""
+        }
+      ]
+    },
+    "ana.prueba@outlook.com": {
+      "provider": "outlook",
+      "messages": [
+        {
+          "id": "o1",
+          "folder": "inbox",
+          "headers": {
+            "From": "Spotify <news@spotify.com>",
+            "Subject": "Tu resumen del año",
+            "Date": "Wed, 01 Oct 2025 18:00:00 +0000",
+            "List-Unsubscribe": "<https://www.spotify.com/unsubscribe/def456>",
+            "List-Unsubscribe-Post": "List-Unsubscribe=One-Click"
+          },
+          "body": ""
+        },
+        {
+          "id": "o2",
+          "folder": "inbox",
+          "headers": {
+            "From": "Microsoft account team <account-security-noreply@accountprotection.microsoft.com>",
+            "Subject": "Nuevo inicio de sesión en tu cuenta",
+            "Date": "Sun, 03 Mar 2024 22:00:00 +0000"
+          },
+          "body": ""
+        },
+        {
+          "id": "o3",
+          "folder": "inbox",
+          "headers": {
+            "From": "Pepe <pepe.amigo@outlook.com>",
+            "Subject": "Fotos del viaje",
+            "Date": "Fri, 12 Dec 2025 19:30:00 +0100"
+          },
+          "body": "<html><body><p>Mira qué fotos.</p></body></html>"
+        }
+      ]
+    }
+  }
+}

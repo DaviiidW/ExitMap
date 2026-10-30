@@ -23,6 +23,7 @@ include = ["exitmap*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["tests"]
 addopts = "--cov=exitmap --cov-report=term-missing"
 
 [tool.coverage.report]
