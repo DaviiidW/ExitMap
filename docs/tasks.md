@@ -5,7 +5,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
 
 ## Fase 0 — Preparación
 
-- [ ] T001 — Esqueleto del proyecto
+- [x] T001 — Esqueleto del proyecto
   - Qué: `pyproject.toml` (Python ≥ 3.11; `pytest` y `pytest-cov` como dependencias de
     desarrollo; umbral de cobertura 75 %), paquete `exitmap/` vacío con `__main__.py`,
     `tests/unit`, `tests/integration`, `tests/fixtures`, `LICENSE` (MIT), `.gitignore`.

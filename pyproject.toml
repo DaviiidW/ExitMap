@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "exitmap"
+version = "0.1.0"
+description = "Find the services you signed up for from your email and leave them."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest==9.2.0",
+    "pytest-cov==7.1.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["exitmap*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=exitmap --cov-report=term-missing"
+
+[tool.coverage.report]
+fail_under = 75
