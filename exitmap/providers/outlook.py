@@ -31,6 +31,8 @@ SCOPES = ("Mail.Read", "offline_access", "openid", "email")
 # Microsoft compares the redirect host with the registered ``http://localhost`` (plan §4).
 REDIRECT_HOST = "localhost"
 PAGE_SIZE = 100
+# Where the user withdraws the permission by hand: the app cannot (spec F9-4).
+PERMISSIONS_URL = "https://account.live.com/consent/Manage"
 
 HEADER_NAMES = ("From", "Subject", "Date", "List-Unsubscribe", "List-Unsubscribe-Post")
 LIST_FIELDS = "id,parentFolderId,internetMessageHeaders"

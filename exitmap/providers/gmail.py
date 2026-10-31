@@ -24,6 +24,8 @@ from exitmap.providers.oauth import OAuthConfig, OAuthSession, Tokens
 READONLY_SCOPE = "https://www.googleapis.com/auth/gmail.readonly"
 PAGE_SIZE = 500  # Largest page ``users.messages.list`` allows.
 METADATA_HEADERS = ("From", "Subject", "Date", "List-Unsubscribe", "List-Unsubscribe-Post")
+# Where the user withdraws the permission by hand when the app cannot (spec F9-4).
+PERMISSIONS_URL = "https://myaccount.google.com/permissions"
 
 
 @dataclass(frozen=True)

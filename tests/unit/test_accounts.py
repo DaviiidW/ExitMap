@@ -5,6 +5,8 @@ from datetime import UTC, datetime
 import pytest
 
 from exitmap.app.accounts import (
+    PERMISSIONS_URLS,
+    AccountService,
     Registration,
     TokenHolder,
     build_provider,
@@ -17,11 +19,13 @@ from exitmap.app.accounts import (
     tokens_key,
 )
 from exitmap.domain.models import Provider
-from exitmap.errors import InvalidRegistrationError
+from exitmap.errors import ExitMapError, InvalidRegistrationError
 from exitmap.providers.base import MailProvider
 from exitmap.providers.gmail import GmailProvider
 from exitmap.providers.oauth import Tokens
 from exitmap.providers.outlook import OutlookProvider
+from exitmap.storage.credentials import MemoryStore
+from exitmap.storage.db import Database
 
 
 def test_registration_is_trimmed():
@@ -78,3 +82,14 @@ def test_factory_builds_each_provider_with_its_tokens():
     assert isinstance(outlook, OutlookProvider) and outlook.tokens is None
     for provider in (gmail, outlook):
         assert isinstance(provider, MailProvider) and isinstance(provider, TokenHolder)
+
+
+def test_every_provider_says_where_to_withdraw_the_permission():
+    """F9-4: instructions point to the provider's permissions page."""
+    assert set(PERMISSIONS_URLS) == set(Provider)
+    assert all(url.startswith("https://") for url in PERMISSIONS_URLS.values())
+
+
+def test_unknown_account_cannot_be_removed():
+    with Database(":memory:") as db, pytest.raises(ExitMapError):
+        AccountService(db, MemoryStore()).remove(99)

@@ -1,10 +1,14 @@
-"""Connect email accounts (spec F1, F10-1, F10-2).
+"""Connect and remove email accounts (spec F1, F9, F10-1, F10-2).
 
 - Each provider needs the user's own app registration (spec §2, F1-2). It is kept in the
   credential store, one per provider, and only after an authorization has worked with it.
 - Connecting authorizes in the browser, reads the account address and keeps the tokens in
   the credential store chosen by the policy (plan §7). An account already connected is not
   added again (F1-7); its tokens are replaced, which is how it gets reconnected.
+- Removing an account withdraws the app's permission when the provider allows it (Gmail)
+  and then deletes its credentials and, by cascade, its services, evidence and states. If
+  the permission cannot be withdrawn (Outlook, no network…) the local data is deleted
+  anyway and the result says where to do it by hand (F9-4).
 - Nothing here depends on a concrete provider: providers are built by a factory
   (constitution 1).
 """
@@ -16,10 +20,12 @@ from datetime import datetime
 from typing import Protocol, runtime_checkable
 
 from exitmap.domain.models import Account, Provider
-from exitmap.errors import InvalidRegistrationError, RegistrationMissingError
-from exitmap.providers.base import MailProvider
+from exitmap.errors import ExitMapError, InvalidRegistrationError, RegistrationMissingError
+from exitmap.providers.base import MailProvider, RevokeNotSupported
+from exitmap.providers.gmail import PERMISSIONS_URL as GOOGLE_PERMISSIONS_URL
 from exitmap.providers.gmail import GmailProvider
 from exitmap.providers.oauth import Tokens
+from exitmap.providers.outlook import PERMISSIONS_URL as MICROSOFT_PERMISSIONS_URL
 from exitmap.providers.outlook import OutlookProvider
 from exitmap.storage.credentials import CredentialStore
 from exitmap.storage.db import Database
@@ -51,6 +57,12 @@ def build_provider(
     if provider is Provider.GMAIL:
         return GmailProvider(registration.client_id, registration.client_secret or "", tokens)
     return OutlookProvider(registration.client_id, tokens)
+
+
+PERMISSIONS_URLS = {
+    Provider.GMAIL: GOOGLE_PERMISSIONS_URL,
+    Provider.OUTLOOK: MICROSOFT_PERMISSIONS_URL,
+}
 
 
 def clean_registration(provider: Provider, registration: Registration) -> Registration:
@@ -113,6 +125,23 @@ class ConnectResult:
 
     account: Account
     already_connected: bool = False
+
+
+@dataclass(frozen=True)
+class RemovalSummary:
+    """What removing an account deletes (F9-1): its credentials and its services with
+    their evidence and states."""
+
+    account: Account
+    service_count: int
+
+
+@dataclass(frozen=True)
+class RemovalResult:
+    """``manual_revoke_url`` is set when the user must withdraw the permission by hand."""
+
+    revoked: bool
+    manual_revoke_url: str | None = None
 
 
 class AccountService:
@@ -181,6 +210,45 @@ class AccountService:
             Account(provider, email, client_registration_ref=registration_key(provider))
         )
         return ConnectResult(account)
+
+    def removal_summary(self, account_id: int) -> RemovalSummary:
+        """Data for the confirmation shown before removing an account (F9-1)."""
+        account = self._account(account_id)
+        return RemovalSummary(account, len(self.db.list_services(account_id)))
+
+    def remove(self, account_id: int) -> RemovalResult:
+        """Remove a confirmed account (F9-2..4).
+
+        The permission is withdrawn first, while the tokens still exist. Credentials are
+        deleted before the account, so a failing keyring leaves the account in the list
+        and the user can try again.
+        """
+        account = self._account(account_id)
+        store = self._store()
+        revoked = self._revoke(account, store)
+        store.delete(tokens_key(account.provider, account.email))
+        self.db.delete_account(account_id)
+        if revoked:
+            return RemovalResult(revoked=True)
+        return RemovalResult(revoked=False, manual_revoke_url=PERMISSIONS_URLS[account.provider])
+
+    def _revoke(self, account: Account, store: CredentialStore) -> bool:
+        registration = self.registration(account.provider)
+        if registration is None:
+            return False
+        value = store.get(tokens_key(account.provider, account.email))
+        tokens = load_tokens(value) if value is not None else None
+        try:
+            self._factory(account.provider, registration, tokens).revoke()
+        except (RevokeNotSupported, ExitMapError):
+            return False
+        return True
+
+    def _account(self, account_id: int) -> Account:
+        account = next((a for a in self.db.list_accounts() if a.id == account_id), None)
+        if account is None:
+            raise ExitMapError()
+        return account
 
     def _find(self, provider: Provider, email: str) -> Account | None:
         return next(

@@ -233,7 +233,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Referencia: spec F1-2, F1-3, F1-5, F1-6, F1-7, F10-1, F10-2.
   - Hecho cuando: tests de integración con proveedor falso para cada criterio citado.
 
-- [ ] T030 — Quitar cuenta
+- [x] T030 — Quitar cuenta
   - Qué: resumen de lo que se borrará, borrado en cascada y de credenciales, revocación
     (Gmail) o instrucciones (Outlook / fallo de red).
   - Referencia: spec F9-1..4.
