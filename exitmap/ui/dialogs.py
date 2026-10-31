@@ -5,6 +5,8 @@
   thread and hands the result back to Tk with ``after()``.
 - Connecting an account: provider, registration data with a link to the guide, waiting
   for the browser and the messages of each outcome (spec F1-1, F1-2, F1-6, F1-7).
+- Removing an account: confirmation with what is deleted and final message, with where to
+  withdraw the permission by hand if needed (spec F9-1, F9-4).
 """
 
 import logging
@@ -16,9 +18,9 @@ from pathlib import Path
 from tkinter import font, messagebox, ttk
 from typing import Any
 
-from exitmap.app.accounts import AccountService, ConnectResult, Registration
+from exitmap.app.accounts import AccountService, ConnectResult, Registration, RemovalResult
 from exitmap.app.unsubscribe import Opener
-from exitmap.domain.models import Provider
+from exitmap.domain.models import Account, Provider
 from exitmap.errors import (
     AccountAlreadyConnectedError,
     ExitMapError,
@@ -26,6 +28,7 @@ from exitmap.errors import (
     RegistrationMissingError,
 )
 from exitmap.storage.db import Database
+from exitmap.ui import presenters
 from exitmap.ui import strings_es as text
 
 # The app runs from the repository, where the registration guide lives (spec §2).
@@ -277,3 +280,55 @@ class ConnectFlow:
                 self._connect(provider, registration)
             return
         show_error(self.parent, user_error(value))
+
+
+RemoveRunner = Callable[[int], RemovalResult]
+
+
+def background_remove(accounts: AccountService, db_path: Path | str) -> RemoveRunner:
+    """Remove with a connection of its own, as it runs in a background thread (the
+    permission is withdrawn over the network)."""
+
+    def run(account_id: int) -> RemovalResult:
+        with Database(db_path) as db:
+            return accounts.with_db(db).remove(account_id)
+
+    return run
+
+
+class RemoveAccountFlow:
+    """Remove an account from the interface after confirming it (F9-1..4)."""
+
+    def __init__(
+        self,
+        parent: tk.Misc,
+        accounts: AccountService,
+        run: RemoveRunner,
+        on_removed: Callable[[], None],
+    ) -> None:
+        self.parent = parent
+        self.accounts = accounts
+        self.run = run
+        self.on_removed = on_removed
+        self.waiting: WaitDialog | None = None
+
+    def start(self, account: Account) -> None:
+        summary = self.accounts.removal_summary(account.id)
+        if not confirm(self.parent, presenters.removal_confirmation(summary)):
+            return
+        self.waiting = WaitDialog(self.parent, text.REMOVING_ACCOUNT)
+        run_in_background(
+            self.parent,
+            lambda: self.run(account.id),
+            lambda ok, value: self._done(account, ok, value),
+        )
+
+    def _done(self, account: Account, ok: bool, value: Any) -> None:
+        if self.waiting is not None:
+            self.waiting.destroy()
+            self.waiting = None
+        self.on_removed()
+        if ok:
+            show_info(self.parent, presenters.removal_result_message(account, value))
+        else:
+            show_error(self.parent, user_error(value))

@@ -13,11 +13,11 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from enum import StrEnum
 
-from exitmap.app.accounts import RemovalSummary
+from exitmap.app.accounts import RemovalResult, RemovalSummary
 from exitmap.app.analysis import AnalysisMode, new_only_period
 from exitmap.app.services import ServiceDetail, ServiceFilter
 from exitmap.app.unsubscribe import Outcome, UnsubscribeResult
-from exitmap.domain.models import Account, Evidence, RelationType, Service, State
+from exitmap.domain.models import Account, Evidence, Provider, RelationType, Service, State
 from exitmap.errors import ExitMapError, InvalidDateError, InvalidDateRangeError
 from exitmap.providers.base import Folders, Period
 from exitmap.ui import strings_es as text
@@ -180,6 +180,21 @@ def removal_confirmation(summary: RemovalSummary) -> str:
         text.SERVICE_COUNT_ONE if count == 1 else text.SERVICE_COUNT_MANY.format(count=count)
     )
     return text.REMOVE_ACCOUNT_CONFIRM.format(account=summary.account.email, count=services)
+
+
+def removal_result_message(account: Account, result: RemovalResult) -> str:
+    """Final message after removing an account, with where to withdraw the permission by
+    hand when the app could not (F9-3, F9-4)."""
+    if result.revoked:  # only Google lets the app withdraw its permission
+        return text.REMOVED_AND_REVOKED.format(account=account.email)
+    reason = (
+        text.REVOKE_NOT_SUPPORTED_REASON
+        if account.provider is Provider.OUTLOOK
+        else text.REVOKE_FAILED_REASON
+    )
+    return text.REMOVED_MANUAL_REVOKE.format(
+        account=account.email, reason=reason, url=result.manual_revoke_url or ""
+    )
 
 
 def _service_label(service: Service) -> str:

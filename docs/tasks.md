@@ -293,7 +293,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Hecho cuando: prueba de humo; cancelar la confirmación no ejecuta nada (test con
     abridor falso).
 
-- [ ] T039 — Quitar cuenta (interfaz)
+- [x] T039 — Quitar cuenta (interfaz)
   - Qué: confirmación con resumen y mensaje final (incluidas las instrucciones de
     Outlook).
   - Referencia: spec F9-1, F9-4.

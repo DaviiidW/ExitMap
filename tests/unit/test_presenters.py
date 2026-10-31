@@ -195,3 +195,20 @@ def test_analysis_done_message():
     assert analysis_done_message(0) == text.NO_SERVICES_FOUND
     assert analysis_done_message(1) == text.ANALYSIS_DONE_ONE
     assert "4 servicios" in analysis_done_message(4)
+
+
+def test_removal_result_messages():
+    """F9-3, F9-4."""
+    from exitmap.app.accounts import RemovalResult
+    from exitmap.ui.presenters import removal_result_message
+
+    gmail = removal_result_message(ACCOUNT, RemovalResult(revoked=True))
+    assert ACCOUNT.email in gmail and "Google" in gmail
+
+    outlook = Account(Provider.OUTLOOK, "ana@outlook.com", id=2)
+    url = "https://account.live.com/consent/Manage"
+    message = removal_result_message(outlook, RemovalResult(False, url))
+    assert text.REVOKE_NOT_SUPPORTED_REASON in message and url in message
+
+    failed = removal_result_message(ACCOUNT, RemovalResult(False, "https://g"))
+    assert text.REVOKE_FAILED_REASON in failed and "https://g" in failed

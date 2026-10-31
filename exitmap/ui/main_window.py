@@ -13,7 +13,13 @@ from exitmap.app.unsubscribe import Opener, SystemOpener, UnsubscribeService
 from exitmap.domain.models import Account, Service
 from exitmap.ui import presenters
 from exitmap.ui.analysis_dialog import AnalysisDialog
-from exitmap.ui.dialogs import ConnectFlow, ConnectRunner, fit_treeview_rows
+from exitmap.ui.dialogs import (
+    ConnectFlow,
+    ConnectRunner,
+    RemoveAccountFlow,
+    RemoveRunner,
+    fit_treeview_rows,
+)
 from exitmap.ui.service_detail import ServiceDetailWindow
 from exitmap.ui import strings_es as text
 
@@ -40,6 +46,7 @@ class MainWindow(ttk.Frame):
         opener: Opener | None = None,
         analysis: AnalysisService | None = None,
         unsubscribe: UnsubscribeService | None = None,
+        remove_runner: RemoveRunner | None = None,
     ) -> None:
         super().__init__(master, padding=8)
         self.accounts = accounts
@@ -51,6 +58,11 @@ class MainWindow(ttk.Frame):
         self.connect_flow = (
             ConnectFlow(self, accounts, connect_runner, self.opener, self.refresh)
             if connect_runner is not None
+            else None
+        )
+        self.remove_flow = (
+            RemoveAccountFlow(self, accounts, remove_runner, self.refresh)
+            if remove_runner is not None
             else None
         )
         self._account_options: list[tuple[str, int | None]] = []
@@ -72,6 +84,7 @@ class MainWindow(ttk.Frame):
         panel.rowconfigure(0, weight=1)
         self.account_list = tk.Listbox(panel, width=34, activestyle="none", exportselection=False)
         self.account_list.grid(row=0, column=0, sticky="ns")
+        self.account_list.bind("<<ListboxSelect>>", lambda _: self._update_remove_button())
         self.no_accounts = ttk.Label(panel, text=text.NO_ACCOUNTS)
         buttons = ttk.Frame(panel)
         buttons.grid(row=2, column=0, sticky="ew", pady=(6, 0))
@@ -84,6 +97,10 @@ class MainWindow(ttk.Frame):
         self.connect_button.pack(side="left")
         self.analyse_button = ttk.Button(buttons, text=text.ANALYSE_BUTTON, command=self.analyse)
         self.analyse_button.pack(side="left", padx=(6, 0))
+        self.remove_button = ttk.Button(
+            buttons, text=text.REMOVE_ACCOUNT_BUTTON, command=self.remove_account
+        )
+        self.remove_button.pack(side="left", padx=(6, 0))
         self.analysis_status = ttk.Label(panel, text="", wraplength=260, justify="left")
         self.analysis_status.grid(row=3, column=0, sticky="w", pady=(6, 0))
 
@@ -142,6 +159,16 @@ class MainWindow(ttk.Frame):
         """Start connecting an account (F1)."""
         if self.connect_flow is not None:
             self.connect_flow.start()
+
+    def remove_account(self) -> None:
+        """Remove the selected account, after confirming it (F9)."""
+        account = self.selected_account()
+        if self.remove_flow is not None and account is not None:
+            self.remove_flow.start(account)
+
+    def _update_remove_button(self) -> None:
+        enabled = self.remove_flow is not None and self.selected_account() is not None
+        self.remove_button.configure(state="normal" if enabled else "disabled")
 
     def analyse(self) -> None:
         """Open the analysis dialog for the selected account, or the first one (F2)."""
@@ -206,6 +233,7 @@ class MainWindow(ttk.Frame):
         self._account_options = presenters.account_filter_options(accounts)
         self._set_options(self.account_filter, self._account_options)
         self._update_analyse_button()
+        self._update_remove_button()
 
     def criteria(self) -> ServiceFilter:
         """Search text and filters chosen in the window (F3-3, F3-4)."""

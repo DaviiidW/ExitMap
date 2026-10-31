@@ -255,3 +255,22 @@ UNSUBSCRIBE_MAIL_PREPARED = (
     "de correo con el mensaje preparado: revísalo y envíalo tú, ExitMap no lo envía. "
     "El estado no ha cambiado: márcalo tú cuando termines."
 )
+
+# Remove account (spec F9).
+REMOVE_ACCOUNT_BUTTON = "Quitar cuenta"
+REMOVED_AND_REVOKED = (
+    "Se ha quitado la cuenta {account}: se han borrado sus datos de este equipo y se ha "
+    "retirado el permiso de ExitMap en Google."
+)
+REMOVED_MANUAL_REVOKE = (
+    "Se ha quitado la cuenta {account} y se han borrado sus datos de este equipo.\n\n"
+    "{reason} Retíralo tú desde esta página:\n{url}"
+)
+REVOKE_NOT_SUPPORTED_REASON = (
+    "Microsoft no permite que ExitMap retire su propio permiso de acceso."
+)
+REVOKE_FAILED_REASON = (
+    "No se ha podido retirar el permiso de acceso de ExitMap (por ejemplo, por falta de "
+    "conexión o porque ya no era válido)."
+)
+REMOVING_ACCOUNT = "Quitando la cuenta y borrando sus datos…"
