@@ -166,7 +166,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Referencia: plan §2, §4 "Detección de sin conexión", §8 (cuotas).
   - Hecho cuando: tests contra servidor HTTP local: 200, 429 + reintento, 500, sin red.
 
-- [ ] T022 — OAuth: PKCE, URL, código y refresco
+- [x] T022 — OAuth: PKCE, URL, código y refresco
   - Qué: `providers/oauth.py`: generación de verificador/desafío S256 y `state`, URL de
     autorización, intercambio de código y refresco de token.
   - Referencia: plan §4 "OAuth".
