@@ -240,7 +240,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Hecho cuando: tests de integración: datos borrados tras reabrir la BD; revocación
     llamada en Gmail; instrucciones en Outlook y sin red.
 
-- [ ] T031 — Lista, ficha y estados
+- [x] T031 — Lista, ficha y estados
   - Qué: `app/services.py`: búsqueda, filtros combinados, orden (aviso → pendiente → resto,
     por nombre), detalle con evidencia (quita el aviso), cambio de estado.
   - Referencia: spec F3-2..4, F4-1, F4-2, F7-2, F8-5.
