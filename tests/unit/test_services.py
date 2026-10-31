@@ -1,7 +1,10 @@
 """Search, filters and order of the service list (spec F3-2..4)."""
 
-from exitmap.app.services import ServiceFilter, matches, sort_key
-from exitmap.domain.models import RelationType, Service, State
+from fakes import FakeOpener
+
+from exitmap.app.services import ServiceCatalogue, ServiceFilter, matches, sort_key
+from exitmap.domain.models import Account, Provider, RelationType, Service, State
+from exitmap.storage.db import Database
 
 
 def _service(name, domain="x.es", state=State.PENDING, alert=False, types=(), account=1):
@@ -51,3 +54,16 @@ def test_order_groups_then_name():
         ("alfa", State.DISMISSED),
         ("zeta", State.KEEP),
     ]
+
+
+def test_management_link_is_opened_with_the_opener():
+    """F6-1: unit check with an in-memory database."""
+    opener = FakeOpener()
+    with Database(":memory:") as db:
+        account = db.add_account(Account(Provider.GMAIL, "a@b.es"))
+        service = db.save_service(
+            Service(account_id=account.id, domain="b.es", name="B", manage_url="https://b.es/")
+        )
+        ServiceCatalogue(db, opener).open_management(service.id)
+        assert db.get_service(service.id).state is State.PENDING
+    assert opener.urls == ["https://b.es/"]

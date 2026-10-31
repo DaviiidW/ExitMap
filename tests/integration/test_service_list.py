@@ -2,12 +2,12 @@
 (spec F3-1..4, F4-1, F4-2, F7-2, F8-5)."""
 
 import pytest
-from fakes import FakeMailProvider
+from fakes import FakeMailProvider, FakeOpener
 
 from exitmap.app.analysis import analyse, save_analysis
 from exitmap.app.services import ServiceCatalogue, ServiceFilter
 from exitmap.domain.catalog import CATALOG_PATH, load_catalog
-from exitmap.domain.models import Account, Provider, RelationType, State
+from exitmap.domain.models import Account, Provider, RelationType, Service, State
 from exitmap.errors import ExitMapError
 from exitmap.storage.db import Database
 
@@ -170,3 +170,27 @@ def test_unknown_service_gives_an_understandable_error(db):
         catalogue.detail(999)
     with pytest.raises(ExitMapError):
         catalogue.set_state(999, State.KEEP)
+
+
+def test_management_link_opens_without_changing_the_state(db_path):
+    """F6-1 and F6-2."""
+    opener = FakeOpener()
+    with Database(db_path) as db:
+        tienda = _by(db, GMAIL, "tienda-ejemplo.es")
+
+        opened = ServiceCatalogue(db, opener).open_management(tienda.id)
+
+        assert opener.urls == [tienda.manage_url] == [opened]
+        assert opener.mails == []
+    with Database(db_path) as db:
+        after = db.get_service(tienda.id)
+        assert (after.state, after.state_changed_at) == (State.PENDING, None)
+
+
+def test_service_without_management_link_opens_nothing(db):
+    opener = FakeOpener()
+    service = db.save_service(Service(account_id=_ids(db)[GMAIL], domain="x.es", name="X"))
+
+    with pytest.raises(ExitMapError):
+        ServiceCatalogue(db, opener).open_management(service.id)
+    assert opener.urls == []

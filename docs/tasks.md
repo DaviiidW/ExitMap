@@ -253,7 +253,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Referencia: spec F5-2..5; plan §4 "Baja".
   - Hecho cuando: tests contra servidor local (2xx, 4xx/5xx, sin red) y con abridor falso.
 
-- [ ] T033 — Abrir gestión de cuenta
+- [x] T033 — Abrir gestión de cuenta
   - Qué: abrir `manage_url` sin cambiar el estado.
   - Referencia: spec F6-1, F6-2.
   - Hecho cuando: test con abridor falso: URL abierta, estado sin cambios.
