@@ -117,3 +117,40 @@ REMOVE_ACCOUNT_CONFIRM = (
 )
 SERVICE_COUNT_ONE = "1 servicio"
 SERVICE_COUNT_MANY = "{count} servicios"
+
+# Labels of the domain values (spec F3-4, F4-1, F7).
+STATE_LABELS = {
+    "pending": "Pendiente",
+    "keep": "Conservar",
+    "unsubscribed": "Baja realizada",
+    "access_revoked": "Acceso revocado",
+    "account_deleted": "Cuenta eliminada",
+    "dismissed": "Descartado",
+}
+RELATION_LABELS = {
+    "registered": "Cuenta registrada",
+    "subscription": "Suscripción comercial",
+    "access": "Acceso/permiso concedido",
+}
+PROVIDER_LABELS = {
+    "gmail": "Gmail",
+    "outlook": "Outlook",
+}
+
+# Main window (spec F3).
+APP_TITLE = "ExitMap"
+ACCOUNTS_TITLE = "Cuentas conectadas"
+NO_ACCOUNTS = "No hay cuentas conectadas."
+ACCOUNT_LABEL = "{email} ({provider})"
+SEARCH_LABEL = "Buscar:"
+ALL_ACCOUNTS = "Todas las cuentas"
+ALL_RELATIONS = "Todos los tipos"
+ALL_STATES = "Todos los estados"
+COLUMN_NAME = "Servicio"
+COLUMN_DOMAIN = "Dominio"
+COLUMN_ACCOUNT = "Cuenta"
+COLUMN_RELATIONS = "Tipo de relación"
+COLUMN_STATE = "Estado"
+# Mark of a service that sent email again after unsubscribing (spec F8-4).
+ALERT_MARK = "⚠ "
+ALERT_HINT = "⚠ Ha vuelto a enviarte correo después de darte de baja."

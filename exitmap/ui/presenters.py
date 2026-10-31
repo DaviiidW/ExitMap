@@ -5,6 +5,7 @@
 - Messages for empty results (spec F2-10, F3-5).
 - Texts of the confirmations shown before unsubscribing and removing an account
   (spec F5-1, F9-1).
+- Rows and filter options of the main window (spec F3, F8-4).
 """
 
 from dataclasses import dataclass
@@ -13,7 +14,8 @@ from enum import StrEnum
 
 from exitmap.app.accounts import RemovalSummary
 from exitmap.app.analysis import AnalysisMode, new_only_period
-from exitmap.domain.models import Account, Service
+from exitmap.app.services import ServiceFilter
+from exitmap.domain.models import Account, RelationType, Service, State
 from exitmap.errors import ExitMapError, InvalidDateError, InvalidDateRangeError
 from exitmap.providers.base import Folders, Period
 from exitmap.ui import strings_es as text
@@ -163,3 +165,51 @@ def _service_label(service: Service) -> str:
     if service.name == service.domain:
         return service.name
     return f"{service.name} ({service.domain})"
+
+
+def account_label(account: Account) -> str:
+    """"ana@gmail.com (Gmail)"."""
+    return text.ACCOUNT_LABEL.format(
+        email=account.email, provider=text.PROVIDER_LABELS[account.provider.value]
+    )
+
+
+def account_filter_options(accounts: list[Account]) -> list[tuple[str, int | None]]:
+    """Choices of the account filter; the first one does not filter (F3-4)."""
+    return [(text.ALL_ACCOUNTS, None)] + [(account_label(a), a.id) for a in accounts]
+
+
+def relation_filter_options() -> list[tuple[str, RelationType | None]]:
+    return [(text.ALL_RELATIONS, None)] + [(text.RELATION_LABELS[r.value], r) for r in RelationType]
+
+
+def state_filter_options() -> list[tuple[str, State | None]]:
+    return [(text.ALL_STATES, None)] + [(text.STATE_LABELS[s.value], s) for s in State]
+
+
+def is_filtered(criteria: ServiceFilter) -> bool:
+    """Whether the search or any filter is applied (F3-5)."""
+    return bool(criteria.text.strip()) or any(
+        value is not None for value in (criteria.account_id, criteria.relation_type, criteria.state)
+    )
+
+
+def relations_text(relation_types: set[RelationType]) -> str:
+    """Relation types in a fixed order, separated by commas."""
+    return ", ".join(text.RELATION_LABELS[r.value] for r in RelationType if r in relation_types)
+
+
+def service_row(service: Service, accounts: dict[int, Account]) -> tuple[str, ...]:
+    """Columns of the list: name, domain, account, relation types and state.
+
+    A service with an alert carries a mark before its name (F8-4).
+    """
+    account = accounts.get(service.account_id)
+    name = (text.ALERT_MARK if service.has_alert else "") + service.name
+    return (
+        name,
+        service.domain,
+        account.email if account else "",
+        relations_text(service.relation_types),
+        text.STATE_LABELS[service.state.value],
+    )

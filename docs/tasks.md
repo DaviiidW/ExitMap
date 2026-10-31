@@ -267,7 +267,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Referencia: spec F2-1, F2-2, F2-3, F2-10, F3-5, F5-1, F8-1, F8-2, F9-1.
   - Hecho cuando: tests unitarios de cada presentador.
 
-- [ ] T035 — Ventana principal
+- [x] T035 — Ventana principal
   - Qué: `ui/main_window.py`: panel de cuentas, buscador, filtros, lista (`ttk.Treeview`) y
     aviso destacado.
   - Referencia: spec F3; plan §2.
