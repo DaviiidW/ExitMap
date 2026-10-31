@@ -160,7 +160,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
 
 ## Fase 5 — OAuth y proveedores
 
-- [ ] T021 — Cliente HTTP mínimo
+- [x] T021 — Cliente HTTP mínimo
   - Qué: `providers/http.py`: GET/POST JSON con `urllib`, reintento con espera ante 429,
     errores de red → excepción "sin conexión".
   - Referencia: plan §2, §4 "Detección de sin conexión", §8 (cuotas).
