@@ -205,7 +205,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Referencia: plan §4; spec F1-4, F9-4.
   - Hecho cuando: tests contra servidor local; test de ámbitos.
 
-- [ ] T028 — Comprobación temprana con cuentas reales (manual)
+- [x] T028 — Comprobación temprana con cuentas reales (manual)
   - Qué: con el registro propio del desarrollador, autorizar y listar unas cabeceras en una
     cuenta Gmail y otra Outlook desde una sesión interactiva de Python.
   - Referencia: plan §8 (riesgo `internetMessageHeaders`).
@@ -213,6 +213,17 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
     Graph no las da en el listado, se aplica la mitigación del plan antes de seguir.
   - Nota: requiere que el desarrollador tenga ya sus registros en Google y Microsoft; si no
     los tiene, se adelanta T044.
+  - Resultado (2026-10-31): Gmail confirmado (`From`, `Subject`, `Date` y
+    `List-Unsubscribe` reales). La parte de Outlook se aplaza a T028b porque el
+    desarrollador no tiene cuenta de Outlook.
+
+- [ ] T028b — Comprobación temprana con Outlook (manual, aplazada)
+  - Qué: la parte de Outlook de T028: autorizar y listar unas cabeceras en una cuenta
+    Outlook con el registro propio en Microsoft.
+  - Referencia: plan §8 (riesgo `internetMessageHeaders`).
+  - Hecho cuando: el desarrollador confirma si Graph devuelve las cabeceras en el listado
+    o solo por mensaje (respaldo ya implementado en `get_headers`); como muy tarde antes de
+    T047.
 
 ## Fase 6 — Servicios de aplicación
 
