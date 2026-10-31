@@ -89,3 +89,43 @@ def test_choosing_a_password_creates_the_encrypted_file(db, tmp_path):
     assert isinstance(store, EncryptedFileStore)
     assert not session_mode(db)
     assert EncryptedFileStore.exists(tmp_path / CREDENTIALS_FILE_NAME)
+
+
+def test_enable_session_mode_deletes_the_given_keys_and_the_file(tmp_path):
+    """F10-6."""
+    from fakes import FakeKeyring
+
+    from exitmap.storage.credentials import (
+        CREDENTIALS_FILE_NAME,
+        EncryptedFileStore,
+        KeyringStore,
+        MemoryStore,
+        enable_session_mode,
+        session_mode,
+    )
+    from exitmap.storage.db import Database
+
+    keyring = FakeKeyring()
+    store = KeyringStore(keyring)
+    store.set("a", "1")
+    store.set("b", "2")
+    EncryptedFileStore.create(tmp_path / CREDENTIALS_FILE_NAME, "pw")
+    with Database(":memory:") as db:
+        new = enable_session_mode(db, tmp_path, store, ["a", "b", "missing"])
+        assert isinstance(new, MemoryStore) and session_mode(db)
+    assert keyring.passwords == {}
+    assert not (tmp_path / CREDENTIALS_FILE_NAME).exists()
+
+
+def test_enable_session_mode_with_locked_keyring_changes_nothing(tmp_path):
+    import pytest
+    from fakes import FakeKeyring
+
+    from exitmap.errors import KeyringUnavailableError
+    from exitmap.storage.credentials import KeyringStore, enable_session_mode, session_mode
+    from exitmap.storage.db import Database
+
+    with Database(":memory:") as db:
+        with pytest.raises(KeyringUnavailableError):
+            enable_session_mode(db, tmp_path, KeyringStore(FakeKeyring(fail=True)), ["a"])
+        assert not session_mode(db)

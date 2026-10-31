@@ -319,3 +319,12 @@ def unsubscribe_result_message(result: UnsubscribeResult, service: Service) -> s
     if result.outcome is Outcome.WEB_OPENED:
         return text.UNSUBSCRIBE_WEB_OPENED
     return text.UNSUBSCRIBE_MAIL_PREPARED
+
+
+def new_password_error(password: str, repeat: str) -> str | None:
+    """Why a new master password cannot be used, or ``None`` (F10-2, F10-5)."""
+    if not password:
+        return text.PASSWORD_EMPTY
+    if password != repeat:
+        return text.PASSWORD_MISMATCH
+    return None

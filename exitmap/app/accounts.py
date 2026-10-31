@@ -231,11 +231,20 @@ class AccountService:
         Without them (session mode after reopening, master password reset…) the account
         has to be connected again → ``ReconnectRequiredError`` (F10-5, F10-7).
         """
+        if self.store is None:
+            raise ReconnectRequiredError()
         registration = self.registration(account.provider)
         value = self._store().get(tokens_key(account.provider, account.email))
         if registration is None or value is None:
             raise ReconnectRequiredError()
         return self._factory(account.provider, registration, load_tokens(value))
+
+    def credential_keys(self) -> list[str]:
+        """Keys of every credential the app may have saved: the registration of each
+        provider and the tokens of each account (F10-6)."""
+        keys = [registration_key(provider) for provider in Provider]
+        keys += [tokens_key(a.provider, a.email) for a in self.db.list_accounts()]
+        return keys
 
     def removal_summary(self, account_id: int) -> RemovalSummary:
         """Data for the confirmation shown before removing an account (F9-1)."""
@@ -247,12 +256,15 @@ class AccountService:
 
         The permission is withdrawn first, while the tokens still exist. Credentials are
         deleted before the account, so a failing keyring leaves the account in the list
-        and the user can try again.
+        and the user can try again. Without a store (no keyring and no choice made yet)
+        there are no credentials to withdraw or delete.
         """
         account = self._account(account_id)
-        store = self._store()
-        revoked = self._revoke(account, store)
-        store.delete(tokens_key(account.provider, account.email))
+        store = self.store
+        revoked = False
+        if store is not None:
+            revoked = self._revoke(account, store)
+            store.delete(tokens_key(account.provider, account.email))
         self.db.delete_account(account_id)
         if revoked:
             return RemovalResult(revoked=True)

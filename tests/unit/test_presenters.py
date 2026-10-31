@@ -212,3 +212,11 @@ def test_removal_result_messages():
 
     failed = removal_result_message(ACCOUNT, RemovalResult(False, "https://g"))
     assert text.REVOKE_FAILED_REASON in failed and "https://g" in failed
+
+
+def test_new_password_error():
+    """F10-2, F10-5."""
+    from exitmap.ui.presenters import new_password_error
+    assert new_password_error("", "") == text.PASSWORD_EMPTY
+    assert new_password_error("abc", "abd") == text.PASSWORD_MISMATCH
+    assert new_password_error("abc", "abc") is None

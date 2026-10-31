@@ -212,6 +212,23 @@ def set_session_mode(db: Database, enabled: bool) -> None:
     db.set_setting(SESSION_MODE_KEY, "1" if enabled else "0")
 
 
+def enable_session_mode(
+    db: Database, data_dir: Path, store: CredentialStore | None, keys: list[str]
+) -> MemoryStore:
+    """Turn session mode on and delete the saved credentials (spec F10-6).
+
+    ``keys`` are deleted from ``store`` (the keyring has no way to list them) and the
+    encrypted file is removed. If the keyring fails, ``KeyringUnavailableError`` is raised
+    before the setting changes. The accounts stay in the list but must be reconnected.
+    """
+    if store is not None and not isinstance(store, MemoryStore):
+        for key in keys:
+            store.delete(key)
+    EncryptedFileStore.reset(Path(data_dir) / CREDENTIALS_FILE_NAME)
+    set_session_mode(db, True)
+    return MemoryStore()
+
+
 class StoreNeed(StrEnum):
     """What the user has to do before a store can be used."""
 

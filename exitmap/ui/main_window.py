@@ -4,6 +4,7 @@ Thin widgets: what is shown comes from ``app.services`` and ``ui.presenters``.
 """
 
 import tkinter as tk
+from pathlib import Path
 from tkinter import ttk
 
 from exitmap.app.accounts import AccountService
@@ -13,11 +14,14 @@ from exitmap.app.unsubscribe import Opener, SystemOpener, UnsubscribeService
 from exitmap.domain.models import Account, Service
 from exitmap.ui import presenters
 from exitmap.ui.analysis_dialog import AnalysisDialog
+from exitmap.storage.credentials import CredentialStore
 from exitmap.ui.dialogs import (
     ConnectFlow,
     ConnectRunner,
     RemoveAccountFlow,
     RemoveRunner,
+    SettingsDialog,
+    ask_store_choice,
     fit_treeview_rows,
 )
 from exitmap.ui.service_detail import ServiceDetailWindow
@@ -47,6 +51,7 @@ class MainWindow(ttk.Frame):
         analysis: AnalysisService | None = None,
         unsubscribe: UnsubscribeService | None = None,
         remove_runner: RemoveRunner | None = None,
+        data_dir: Path | None = None,
     ) -> None:
         super().__init__(master, padding=8)
         self.accounts = accounts
@@ -55,8 +60,16 @@ class MainWindow(ttk.Frame):
         self.analysis_dialog: AnalysisDialog | None = None
         self.opener = opener or SystemOpener()
         self.unsubscribe = unsubscribe or UnsubscribeService(catalogue.db, opener=self.opener)
+        self.data_dir = data_dir
         self.connect_flow = (
-            ConnectFlow(self, accounts, connect_runner, self.opener, self.refresh)
+            ConnectFlow(
+                self,
+                accounts,
+                connect_runner,
+                self.opener,
+                self.refresh,
+                choose_store=self._choose_store if data_dir is not None else None,
+            )
             if connect_runner is not None
             else None
         )
@@ -101,6 +114,13 @@ class MainWindow(ttk.Frame):
             buttons, text=text.REMOVE_ACCOUNT_BUTTON, command=self.remove_account
         )
         self.remove_button.pack(side="left", padx=(6, 0))
+        self.settings_button = ttk.Button(
+            panel,
+            text=text.SETTINGS_BUTTON,
+            command=self.open_settings,
+            state="normal" if self.data_dir is not None else "disabled",
+        )
+        self.settings_button.grid(row=4, column=0, sticky="w", pady=(6, 0))
         self.analysis_status = ttk.Label(panel, text="", wraplength=260, justify="left")
         self.analysis_status.grid(row=3, column=0, sticky="w", pady=(6, 0))
 
@@ -159,6 +179,15 @@ class MainWindow(ttk.Frame):
         """Start connecting an account (F1)."""
         if self.connect_flow is not None:
             self.connect_flow.start()
+
+    def _choose_store(self) -> CredentialStore | None:
+        assert self.data_dir is not None
+        return ask_store_choice(self, self.accounts.db, self.data_dir)
+
+    def open_settings(self) -> None:
+        """Session mode setting (F10-6)."""
+        if self.data_dir is not None:
+            SettingsDialog(self, self.accounts, self.data_dir).show()
 
     def remove_account(self) -> None:
         """Remove the selected account, after confirming it (F9)."""

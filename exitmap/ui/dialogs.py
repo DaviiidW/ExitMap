@@ -7,6 +7,8 @@
   for the browser and the messages of each outcome (spec F1-1, F1-2, F1-6, F1-7).
 - Removing an account: confirmation with what is deleted and final message, with where to
   withdraw the permission by hand if needed (spec F9-1, F9-4).
+- Credentials: master password or session mode without keyring, unlocking with the
+  master password, reset, and the session mode setting (spec F10-2..7).
 """
 
 import logging
@@ -26,6 +28,16 @@ from exitmap.errors import (
     ExitMapError,
     InvalidRegistrationError,
     RegistrationMissingError,
+    WrongPasswordError,
+)
+from exitmap.storage.credentials import (
+    CREDENTIALS_FILE_NAME,
+    CredentialStore,
+    EncryptedFileStore,
+    enable_session_mode,
+    session_mode,
+    set_session_mode,
+    store_from_choice,
 )
 from exitmap.storage.db import Database
 from exitmap.ui import presenters
@@ -234,8 +246,10 @@ class ConnectFlow:
         on_connected: Callable[[], None],
         ask_provider: Callable[[], Provider | None] | None = None,
         ask_registration: Callable[[Provider, str | None], Registration | None] | None = None,
+        choose_store: Callable[[], CredentialStore | None] | None = None,
     ) -> None:
         self.parent = parent
+        self.choose_store = choose_store
         self.accounts = accounts
         self.run = run
         self.opener = opener
@@ -247,6 +261,12 @@ class ConnectFlow:
         self.waiting: WaitDialog | None = None
 
     def start(self) -> None:
+        if self.accounts.store is None:
+            # No keyring: choose master password or session mode first (F10-2).
+            store = self.choose_store() if self.choose_store is not None else None
+            if store is None:
+                return
+            self.accounts.store = store
         provider = self.ask_provider()
         if provider is None:
             return
@@ -332,3 +352,186 @@ class RemoveAccountFlow:
             show_info(self.parent, presenters.removal_result_message(account, value))
         else:
             show_error(self.parent, user_error(value))
+
+
+class StoreChoiceDialog(ModalDialog):
+    """Without keyring: create a master password or use session mode (F10-2).
+
+    ``result`` is ``("password", <password>)``, ``("session", None)`` or ``None``.
+    """
+
+    def __init__(self, parent: tk.Misc) -> None:
+        super().__init__(parent, text.STORE_CHOICE_TITLE)
+        self.choice = tk.StringVar(value="password")
+        self.password = tk.StringVar()
+        self.repeat = tk.StringVar()
+        ttk.Label(self.body, text=text.STORE_CHOICE_INTRO, wraplength=440).grid(
+            row=0, column=0, columnspan=2, sticky="w", pady=(0, 8)
+        )
+        self.password_option = ttk.Radiobutton(
+            self.body, text=text.CHOICE_PASSWORD, value="password", variable=self.choice,
+            command=self._update,
+        )
+        self.password_option.grid(row=1, column=0, columnspan=2, sticky="w")
+        ttk.Label(self.body, text=text.CHOICE_PASSWORD_HINT, wraplength=420).grid(
+            row=2, column=0, columnspan=2, sticky="w", padx=(20, 0)
+        )
+        ttk.Label(self.body, text=text.PASSWORD).grid(row=3, column=0, sticky="w", padx=(20, 4))
+        self.password_entry = ttk.Entry(self.body, textvariable=self.password, show="•")
+        self.password_entry.grid(row=3, column=1, sticky="ew", pady=2)
+        ttk.Label(self.body, text=text.PASSWORD_REPEAT).grid(
+            row=4, column=0, sticky="w", padx=(20, 4)
+        )
+        self.repeat_entry = ttk.Entry(self.body, textvariable=self.repeat, show="•")
+        self.repeat_entry.grid(row=4, column=1, sticky="ew", pady=2)
+        self.session_option = ttk.Radiobutton(
+            self.body, text=text.CHOICE_SESSION, value="session", variable=self.choice,
+            command=self._update,
+        )
+        self.session_option.grid(row=5, column=0, columnspan=2, sticky="w", pady=(8, 0))
+        ttk.Label(self.body, text=text.CHOICE_SESSION_HINT, wraplength=420).grid(
+            row=6, column=0, columnspan=2, sticky="w", padx=(20, 0)
+        )
+        self.error = ttk.Label(self.body, text="", foreground="#b00020")
+        self.error.grid(row=7, column=0, columnspan=2, sticky="w", pady=(6, 0))
+        buttons = ttk.Frame(self.body)
+        buttons.grid(row=8, column=0, columnspan=2, sticky="e", pady=(8, 0))
+        ttk.Button(buttons, text=text.OK, command=self.accept).pack(side="left", padx=(0, 6))
+        ttk.Button(buttons, text=text.CANCEL, command=self.cancel).pack(side="left")
+
+    def _update(self) -> None:
+        state = "normal" if self.choice.get() == "password" else "disabled"
+        self.password_entry.configure(state=state)
+        self.repeat_entry.configure(state=state)
+        self.error.configure(text="")
+
+    def accept(self) -> None:
+        if self.choice.get() == "session":
+            self.close(("session", None))
+            return
+        error = presenters.new_password_error(self.password.get(), self.repeat.get())
+        if error is not None:
+            self.error.configure(text=error)
+            return
+        self.close(("password", self.password.get()))
+
+
+def ask_store_choice(
+    parent: tk.Misc, db: Database, data_dir: Path
+) -> CredentialStore | None:
+    """Ask the user without keyring and build the chosen store (F10-2)."""
+    choice = StoreChoiceDialog(parent).show()
+    if choice is None:
+        return None
+    return store_from_choice(db, data_dir, choice[1])
+
+
+class PasswordDialog(ModalDialog):
+    """Ask for the master password when the app opens (F10-3, F10-4, F10-5).
+
+    A wrong password can be typed again. "Forgot" deletes the encrypted credentials
+    after confirming and asks for a new password. ``result`` is the opened store, or
+    ``None`` if the dialog is closed.
+    """
+
+    def __init__(self, parent: tk.Misc, data_dir: Path) -> None:
+        super().__init__(parent, text.UNLOCK_TITLE)
+        self.path = Path(data_dir) / CREDENTIALS_FILE_NAME
+        self.password = tk.StringVar()
+        self.repeat = tk.StringVar()
+        self.creating = False
+
+        self.intro = ttk.Label(self.body, text=text.UNLOCK_INTRO, wraplength=380)
+        self.intro.grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 8))
+        ttk.Label(self.body, text=text.PASSWORD).grid(row=1, column=0, sticky="w", padx=(0, 4))
+        self.password_entry = ttk.Entry(self.body, textvariable=self.password, show="•")
+        self.password_entry.grid(row=1, column=1, sticky="ew", pady=2)
+        self.password_entry.bind("<Return>", lambda _: self.accept())
+        self.repeat_label = ttk.Label(self.body, text=text.PASSWORD_REPEAT)
+        self.repeat_entry = ttk.Entry(self.body, textvariable=self.repeat, show="•")
+        self.error = ttk.Label(self.body, text="", foreground="#b00020", wraplength=380)
+        self.error.grid(row=3, column=0, columnspan=2, sticky="w", pady=(6, 0))
+        buttons = ttk.Frame(self.body)
+        buttons.grid(row=4, column=0, columnspan=2, sticky="ew", pady=(8, 0))
+        self.forgot_button = ttk.Button(buttons, text=text.FORGOT_PASSWORD, command=self.forgot)
+        self.forgot_button.pack(side="left")
+        self.accept_button = ttk.Button(buttons, text=text.UNLOCK_BUTTON, command=self.accept)
+        self.accept_button.pack(side="right")
+
+    def accept(self) -> None:
+        if self.creating:
+            self._create()
+        else:
+            self._unlock()
+
+    def _unlock(self) -> None:
+        try:
+            store = EncryptedFileStore.open(self.path, self.password.get())
+        except WrongPasswordError as exc:
+            self.error.configure(text=exc.user_message)
+            self.password.set("")
+            return
+        self.close(store)
+
+    def forgot(self) -> None:
+        """Reset: the encrypted credentials are deleted, results and states stay (F10-5)."""
+        if not confirm(self, text.RESET_CONFIRM):
+            return
+        EncryptedFileStore.reset(self.path)
+        self.creating = True
+        self.intro.configure(text=text.NEW_PASSWORD_INTRO)
+        self.repeat_label.grid(row=2, column=0, sticky="w", padx=(0, 4))
+        self.repeat_entry.grid(row=2, column=1, sticky="ew", pady=2)
+        self.forgot_button.pack_forget()
+        self.accept_button.configure(text=text.OK)
+        self.password.set("")
+        self.error.configure(text="")
+
+    def _create(self) -> None:
+        error = presenters.new_password_error(self.password.get(), self.repeat.get())
+        if error is not None:
+            self.error.configure(text=error)
+            return
+        self.close(EncryptedFileStore.create(self.path, self.password.get()))
+
+
+class SettingsDialog(ModalDialog):
+    """Session mode setting (F10-6).
+
+    Turning it on, after confirming, deletes the saved credentials; the accounts must be
+    reconnected. Turning it off takes effect the next time the app opens.
+    """
+
+    def __init__(self, parent: tk.Misc, accounts: AccountService, data_dir: Path) -> None:
+        super().__init__(parent, text.SETTINGS_TITLE)
+        self.accounts = accounts
+        self.data_dir = Path(data_dir)
+        self.session = tk.BooleanVar(value=session_mode(accounts.db))
+        self.session_check = ttk.Checkbutton(
+            self.body, text=text.SESSION_MODE, variable=self.session, command=self.toggle
+        )
+        self.session_check.pack(anchor="w")
+        ttk.Label(self.body, text=text.SESSION_MODE_HINT, wraplength=420).pack(
+            anchor="w", padx=(20, 0), pady=(2, 0)
+        )
+        ttk.Button(self.body, text=text.CLOSE, command=self.cancel).pack(anchor="e", pady=(10, 0))
+
+    def toggle(self) -> None:
+        db = self.accounts.db
+        if not self.session.get():
+            set_session_mode(db, False)
+            show_info(self, text.SESSION_OFF_DONE)
+            return
+        if not confirm(self, text.SESSION_ON_CONFIRM):
+            self.session.set(False)
+            return
+        try:
+            store = enable_session_mode(
+                db, self.data_dir, self.accounts.store, self.accounts.credential_keys()
+            )
+        except Exception as exc:  # noqa: BLE001 - every failure must reach the user
+            self.session.set(False)
+            show_error(self, user_error(exc))
+            return
+        self.accounts.store = store
+        show_info(self, text.SESSION_ON_DONE)

@@ -274,3 +274,55 @@ REVOKE_FAILED_REASON = (
     "conexión o porque ya no era válido)."
 )
 REMOVING_ACCOUNT = "Quitando la cuenta y borrando sus datos…"
+
+# Credentials and settings (spec F10-2..7).
+STORE_CHOICE_TITLE = "Cómo guardar el acceso a tus cuentas"
+STORE_CHOICE_INTRO = (
+    "Este equipo no tiene un llavero del sistema disponible. Elige cómo guardar el acceso "
+    "a tus cuentas de correo:"
+)
+CHOICE_PASSWORD = "Crear una contraseña maestra"
+CHOICE_PASSWORD_HINT = (
+    "El acceso se guarda cifrado en este equipo y se te pedirá la contraseña cada vez que "
+    "abras ExitMap."
+)
+CHOICE_SESSION = "Usar el modo sesión"
+CHOICE_SESSION_HINT = (
+    "El acceso no se guarda: al cerrar ExitMap tendrás que volver a conectar tus cuentas. "
+    "Tus resultados y estados sí se conservan."
+)
+PASSWORD = "Contraseña:"
+PASSWORD_REPEAT = "Repite la contraseña:"
+PASSWORD_EMPTY = "Escribe una contraseña."
+PASSWORD_MISMATCH = "Las dos contraseñas no coinciden."
+UNLOCK_TITLE = "Contraseña maestra"
+UNLOCK_INTRO = "Escribe tu contraseña maestra para acceder a tus cuentas."
+UNLOCK_BUTTON = "Entrar"
+FORGOT_PASSWORD = "He olvidado la contraseña"
+RESET_CONFIRM = (
+    "Se borrará el acceso guardado a tus cuentas y crearás una contraseña nueva. Después "
+    "tendrás que volver a conectar tus cuentas.\n\n"
+    "Tus resultados y estados se conservan.\n\n¿Restablecer la contraseña?"
+)
+NEW_PASSWORD_INTRO = (
+    "Crea una contraseña maestra nueva. Después vuelve a conectar tus cuentas."
+)
+SETTINGS_BUTTON = "Ajustes"
+SETTINGS_TITLE = "Ajustes"
+SESSION_MODE = "Modo sesión: no guardar el acceso a las cuentas en este equipo"
+SESSION_MODE_HINT = (
+    "Con el modo sesión, al cerrar ExitMap tendrás que volver a conectar tus cuentas. "
+    "Tus resultados y estados se conservan."
+)
+SESSION_ON_CONFIRM = (
+    "Se borrará el acceso guardado a tus cuentas y no se volverá a guardar. Las cuentas "
+    "seguirán en la lista, pero tendrás que volver a conectarlas.\n\n¿Activar el modo sesión?"
+)
+SESSION_ON_DONE = (
+    "Modo sesión activado. Se ha borrado el acceso guardado: vuelve a conectar tus cuentas "
+    "para analizarlas."
+)
+SESSION_OFF_DONE = (
+    "Modo sesión desactivado. Se aplicará la próxima vez que abras ExitMap; hasta entonces "
+    "el acceso a tus cuentas sigue sin guardarse."
+)

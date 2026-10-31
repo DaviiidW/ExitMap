@@ -299,7 +299,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Referencia: spec F9-1, F9-4.
   - Hecho cuando: prueba de humo y comprobación manual.
 
-- [ ] T040 — Credenciales y ajustes (interfaz)
+- [x] T040 — Credenciales y ajustes (interfaz)
   - Qué: elegir contraseña o modo sesión sin llavero (elegir sesión activa el ajuste), pedir
     contraseña al abrir, reintento, restablecer, ajuste de modo sesión (al activarlo se
     borran las credenciales guardadas).
