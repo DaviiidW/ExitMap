@@ -130,9 +130,28 @@ def reanalysis_notice(account: Account) -> str | None:
     return text.REANALYSIS_NOTICE if is_reanalysis(account) else None
 
 
+def progress_text(done: int, total: int) -> str:
+    """"1.200 de 15.000" (F2-4)."""
+    return text.PROGRESS.format(done=_thousands(done), total=_thousands(total))
+
+
+def _thousands(number: int) -> str:
+    return f"{number:,}".replace(",", ".")
+
+
 def analysis_result_message(service_count: int) -> str | None:
     """Message when a complete analysis found no service (F2-10)."""
     return text.NO_SERVICES_FOUND if service_count == 0 else None
+
+
+def analysis_done_message(service_count: int) -> str:
+    """Result of a complete analysis; without services it suggests what to change (F2-10)."""
+    empty = analysis_result_message(service_count)
+    if empty is not None:
+        return empty
+    if service_count == 1:
+        return text.ANALYSIS_DONE_ONE
+    return text.ANALYSIS_DONE_MANY.format(count=service_count)
 
 
 def list_message(visible: int, filtered: bool) -> str | None:

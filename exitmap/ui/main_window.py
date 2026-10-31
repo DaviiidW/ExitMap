@@ -7,10 +7,12 @@ import tkinter as tk
 from tkinter import font, ttk
 
 from exitmap.app.accounts import AccountService
+from exitmap.app.analysis import AnalysisService
 from exitmap.app.services import ServiceCatalogue, ServiceFilter
 from exitmap.app.unsubscribe import Opener, SystemOpener
-from exitmap.domain.models import Service
+from exitmap.domain.models import Account, Service
 from exitmap.ui import presenters
+from exitmap.ui.analysis_dialog import AnalysisDialog
 from exitmap.ui.dialogs import ConnectFlow, ConnectRunner
 from exitmap.ui import strings_es as text
 
@@ -35,10 +37,13 @@ class MainWindow(ttk.Frame):
         catalogue: ServiceCatalogue,
         connect_runner: ConnectRunner | None = None,
         opener: Opener | None = None,
+        analysis: AnalysisService | None = None,
     ) -> None:
         super().__init__(master, padding=8)
         self.accounts = accounts
         self.catalogue = catalogue
+        self.analysis = analysis
+        self.analysis_dialog: AnalysisDialog | None = None
         self.opener = opener or SystemOpener()
         self.connect_flow = (
             ConnectFlow(self, accounts, connect_runner, self.opener, self.refresh)
@@ -74,6 +79,10 @@ class MainWindow(ttk.Frame):
             state="normal" if self.connect_flow else "disabled",
         )
         self.connect_button.pack(side="left")
+        self.analyse_button = ttk.Button(buttons, text=text.ANALYSE_BUTTON, command=self.analyse)
+        self.analyse_button.pack(side="left", padx=(6, 0))
+        self.analysis_status = ttk.Label(panel, text="", wraplength=260, justify="left")
+        self.analysis_status.grid(row=3, column=0, sticky="w", pady=(6, 0))
 
     def _build_services_panel(self) -> None:
         panel = ttk.Frame(self)
@@ -131,6 +140,42 @@ class MainWindow(ttk.Frame):
         if self.connect_flow is not None:
             self.connect_flow.start()
 
+    def analyse(self) -> None:
+        """Open the analysis dialog for the selected account, or the first one (F2)."""
+        accounts = list(self._accounts.values())
+        if self.analysis is None or not accounts or self.analysis.running:
+            return
+        self.analysis_dialog = AnalysisDialog(
+            self,
+            accounts,
+            self.analysis,
+            self.accounts.provider_for,
+            selected=self.selected_account(),
+            on_start=self._analysis_started,
+            on_end=self._analysis_ended,
+        )
+
+    def _analysis_started(self) -> None:
+        """Only one analysis at a time, in any account (F2-9)."""
+        self.analysis_status.configure(text=text.ANALYSIS_RUNNING)
+        self._update_analyse_button()
+
+    def _analysis_ended(self) -> None:
+        self.analysis_status.configure(text="")
+        self.refresh()
+
+    def _update_analyse_button(self) -> None:
+        enabled = (
+            self.analysis is not None and bool(self._accounts) and not self.analysis.running
+        )
+        self.analyse_button.configure(state="normal" if enabled else "disabled")
+
+    def selected_account(self) -> Account | None:
+        selection = self.account_list.curselection()
+        if not selection:
+            return None
+        return list(self._accounts.values())[selection[0]]
+
     def refresh(self) -> None:
         """Reload accounts and services, keeping the search and filters."""
         self.refresh_accounts()
@@ -148,6 +193,7 @@ class MainWindow(ttk.Frame):
             self.no_accounts.grid(row=1, column=0, sticky="w")
         self._account_options = presenters.account_filter_options(accounts)
         self._set_options(self.account_filter, self._account_options)
+        self._update_analyse_button()
 
     def criteria(self) -> ServiceFilter:
         """Search text and filters chosen in the window (F3-3, F3-4)."""

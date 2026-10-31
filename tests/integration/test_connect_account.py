@@ -213,3 +213,26 @@ def test_connecting_before_choosing_a_store_is_refused(db, factory):
     with pytest.raises(RuntimeError):
         AccountService(db, None, factory).connect(Provider.GMAIL, GOOGLE_REG)
     assert factory.built == []
+
+
+def test_provider_for_a_connected_account_uses_the_saved_tokens(db, factory):
+    """The analysis reads the account with the registration and tokens kept at connection."""
+    service = AccountService(db, MemoryStore(), factory)
+    account = service.connect(Provider.GMAIL, GOOGLE_REG).account
+
+    mail = service.provider_for(account)
+
+    assert mail.account_email() == GMAIL
+    provider, registration, tokens, _ = factory.built[-1]
+    assert (provider, registration) == (Provider.GMAIL, GOOGLE_REG)
+    assert tokens.refresh_token == f"refresh-{GMAIL}"
+
+
+def test_provider_for_without_saved_access_asks_to_reconnect(db, factory):
+    """F10-7: in session mode, after reopening, the tokens are gone."""
+    from exitmap.errors import ReconnectRequiredError
+
+    account = AccountService(db, MemoryStore(), factory).connect(Provider.GMAIL, GOOGLE_REG).account
+    with pytest.raises(ReconnectRequiredError) as info:
+        AccountService(db, MemoryStore(), factory).provider_for(account)
+    assert "conectar" in info.value.user_message

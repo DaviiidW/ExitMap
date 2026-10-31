@@ -280,7 +280,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Referencia: spec F1-1, F1-2, F1-6, F1-7.
   - Hecho cuando: prueba de humo y comprobación manual con proveedor falso.
 
-- [ ] T037 — Diálogo de análisis
+- [x] T037 — Diálogo de análisis
   - Qué: periodo (por defecto "Buzón entero"), rango validado, Spam/Papelera desactivados,
     modo de re-análisis + aviso de estados, barra de progreso, cancelar, resultado vacío.
   - Referencia: spec F2-1..5, F2-9, F2-10, F8-1, F8-2.

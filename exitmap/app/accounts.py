@@ -20,7 +20,12 @@ from datetime import datetime
 from typing import Protocol, runtime_checkable
 
 from exitmap.domain.models import Account, Provider
-from exitmap.errors import ExitMapError, InvalidRegistrationError, RegistrationMissingError
+from exitmap.errors import (
+    ExitMapError,
+    InvalidRegistrationError,
+    ReconnectRequiredError,
+    RegistrationMissingError,
+)
 from exitmap.providers.base import MailProvider, RevokeNotSupported
 from exitmap.providers.gmail import PERMISSIONS_URL as GOOGLE_PERMISSIONS_URL
 from exitmap.providers.gmail import GmailProvider
@@ -219,6 +224,18 @@ class AccountService:
             Account(provider, email, client_registration_ref=registration_key(provider))
         )
         return ConnectResult(account)
+
+    def provider_for(self, account: Account) -> MailProvider:
+        """Provider of a connected account, with its saved registration and tokens.
+
+        Without them (session mode after reopening, master password reset…) the account
+        has to be connected again → ``ReconnectRequiredError`` (F10-5, F10-7).
+        """
+        registration = self.registration(account.provider)
+        value = self._store().get(tokens_key(account.provider, account.email))
+        if registration is None or value is None:
+            raise ReconnectRequiredError()
+        return self._factory(account.provider, registration, load_tokens(value))
 
     def removal_summary(self, account_id: int) -> RemovalSummary:
         """Data for the confirmation shown before removing an account (F9-1)."""

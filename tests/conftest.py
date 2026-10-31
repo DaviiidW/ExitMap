@@ -1,5 +1,7 @@
 """Shared fixtures."""
 
+import gc
+
 import pytest
 
 
@@ -14,3 +16,5 @@ def tk_root():
     root.withdraw()
     yield root
     root.destroy()
+    # Free Tk objects here: if a background thread collects them, Tk complains.
+    gc.collect()

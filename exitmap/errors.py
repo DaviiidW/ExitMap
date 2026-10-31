@@ -57,6 +57,10 @@ class RegistrationMissingError(ExitMapError):
     key = "registration_missing"
 
 
+class ReconnectRequiredError(ExitMapError):
+    key = "reconnect_required"
+
+
 class AccountAlreadyConnectedError(ExitMapError):
     key = "account_already_connected"
 

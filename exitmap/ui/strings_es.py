@@ -38,6 +38,10 @@ ERRORS: dict[str, tuple[str, str]] = {
         "Faltan los datos de registro de la app para este proveedor de correo.",
         "Sigue la guía de registro y copia en ExitMap los datos que obtengas.",
     ),
+    "reconnect_required": (
+        "No hay un acceso guardado para esta cuenta.",
+        "Vuelve a conectarla con «Conectar cuenta». Tus resultados y estados se conservan.",
+    ),
     "account_already_connected": (
         "Esta cuenta ya estaba conectada.",
         "",
@@ -176,4 +180,30 @@ GUIDE_LINK = "Abrir la guía de registro"
 WAITING_AUTHORIZATION = (
     "Completa la autorización en el navegador que se ha abierto.\n"
     "ExitMap solo pide permiso para leer tu correo."
+)
+
+# Analysis dialog (spec F2-1..6, F2-9, F2-10, F8-1, F8-2).
+ANALYSE_BUTTON = "Analizar"
+ANALYSIS_TITLE = "Analizar el buzón"
+ANALYSIS_ACCOUNT = "Cuenta:"
+ANALYSIS_PERIOD = "Periodo"
+ANALYSIS_FROM = "Desde (DD/MM/AAAA):"
+ANALYSIS_TO = "Hasta (DD/MM/AAAA):"
+ANALYSIS_FOLDERS = "Carpetas"
+INCLUDE_SPAM = "Incluir Spam"
+INCLUDE_TRASH = "Incluir Papelera"
+ANALYSIS_MODE = "Volver a analizar"
+START_ANALYSIS = "Iniciar análisis"
+CLOSE = "Cerrar"
+ANALYSIS_LISTING = "Buscando correos…"
+PROGRESS = "{done} de {total}"
+ANALYSIS_RUNNING = "Hay un análisis en curso. Espera a que termine o cancélalo antes de iniciar otro."
+ANALYSIS_DONE_ONE = "Análisis terminado: se ha detectado 1 servicio."
+ANALYSIS_DONE_MANY = "Análisis terminado: se han detectado {count} servicios."
+ANALYSIS_CANCELLED = (
+    "Análisis cancelado. Se conservan los resultados del último análisis completo, si lo hay."
+)
+ANALYSIS_STOPPED = (
+    "El análisis se ha detenido y no se ha guardado nada; se conservan los resultados del "
+    "último análisis completo, si lo hay. Tendrás que empezarlo de nuevo."
 )

@@ -180,3 +180,18 @@ def test_removal_confirmation_says_what_is_deleted(count, label):
     assert ACCOUNT.email in message
     assert "credenciales" in message and "resultados" in message and "estados" in message
     assert label in message
+
+
+def test_progress_text_uses_spanish_thousands():
+    """F2-4."""
+    from exitmap.ui.presenters import progress_text
+    assert progress_text(1200, 15000) == "1.200 de 15.000"
+    assert progress_text(0, 7) == "0 de 7"
+
+
+def test_analysis_done_message():
+    """F2-10."""
+    from exitmap.ui.presenters import analysis_done_message
+    assert analysis_done_message(0) == text.NO_SERVICES_FOUND
+    assert analysis_done_message(1) == text.ANALYSIS_DONE_ONE
+    assert "4 servicios" in analysis_done_message(4)
