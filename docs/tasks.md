@@ -192,7 +192,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Hecho cuando: tests contra servidor local; test que comprueba que el único ámbito pedido
     es `gmail.readonly`.
 
-- [ ] T026 — Outlook: listado
+- [x] T026 — Outlook: listado
   - Qué: `providers/outlook.py`: `/me/messages` excluyendo `sentitems` y `drafts`, y
     `junkemail`/`deleteditems` salvo que se elijan; `$filter` por fecha, paginación, total
     exacto.
