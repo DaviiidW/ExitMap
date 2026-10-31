@@ -138,7 +138,9 @@ reconectar (caso límite de la spec).
 - Registro del usuario: proyecto en Google Cloud, cliente "Escritorio", pantalla de
   consentimiento **en producción sin verificar** (evita la caducidad de 7 días del modo prueba).
 - Listado: `users.messages.list` con `q=after:/before:` y `includeSpamTrash` según carpetas
-  elegidas (filtrando etiquetas SPAM/TRASH). Primero se listan IDs (total exacto para el
+  elegidas (filtrando etiquetas SPAM/TRASH con `-in:spam`/`-in:trash` en `q`). Se analiza todo
+  el buzón (incluidos archivados) excepto Enviados y Borradores (`-in:sent -in:drafts`), y
+  Spam/Papelera solo si se eligen. Primero se listan IDs (total exacto para el
   progreso), después `messages.get?format=metadata` con `From, Subject, Date,
   List-Unsubscribe, List-Unsubscribe-Post`. Cuerpo (`format=full`) solo para los correos de
   evidencia de registro/acceso sin entrada en catálogo.
@@ -148,9 +150,11 @@ reconectar (caso límite de la spec).
 - Ámbitos: `Mail.Read`, `offline_access`, `openid`, `email`. Autoridad `common`.
 - Registro del usuario: app en Azure, plataforma "cliente público/móvil y escritorio",
   redirección `http://localhost`. Sin secreto.
-- Listado: `/me/mailFolders/{id}/messages` con `$filter=receivedDateTime`, `$select` de
-  cabeceras (`internetMessageHeaders`), `$count=true` para el total. Carpetas `junkemail` y
-  `deleteditems` solo si el usuario las incluye.
+- Listado: `/me/messages` (todas las carpetas) con `$filter=receivedDateTime` y `$select` de
+  `parentFolderId` y cabeceras (`internetMessageHeaders`). Mismo criterio que Gmail: se excluyen
+  los mensajes de `sentitems` y `drafts`, y los de `junkemail` y `deleteditems` salvo que el
+  usuario los incluya (los ID de esas carpetas se obtienen con `/me/mailFolders/{nombre}`).
+  El total exacto es el número de ID tras recorrer todas las páginas, como en Gmail.
 - Revocación: **Microsoft no ofrece un endpoint para que la app revoque su propio permiso en
   cuentas personales** → se aplica F9-4 (F9-4 de la spec).
 

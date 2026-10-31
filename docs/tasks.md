@@ -193,8 +193,9 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
     es `gmail.readonly`.
 
 - [ ] T026 — Outlook: listado
-  - Qué: `providers/outlook.py`: carpetas (bandeja + `junkemail`/`deleteditems` si se
-    eligen), `$filter` por fecha, paginación, `$count`.
+  - Qué: `providers/outlook.py`: `/me/messages` excluyendo `sentitems` y `drafts`, y
+    `junkemail`/`deleteditems` salvo que se elijan; `$filter` por fecha, paginación, total
+    exacto.
   - Referencia: plan §4 "Microsoft"; spec F2-1, F2-3.
   - Hecho cuando: tests contra servidor local que imita Graph.
 
