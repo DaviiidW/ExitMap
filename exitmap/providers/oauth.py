@@ -292,3 +292,70 @@ def run_authorization(
     finally:
         receiver.close()
     return exchange_code(http, config, code, receiver.redirect_uri, pkce)
+
+
+# Refresh the access token this long before it expires, so a request never uses a stale one.
+REFRESH_MARGIN = timedelta(seconds=60)
+UNAUTHORIZED = 401
+
+
+class OAuthSession:
+    """Calls a provider API with a fresh access token (plan §4 "Refresco automático").
+
+    The token is refreshed when it is about to expire, and once more if the API still
+    answers 401. If refreshing is not possible → ``PermissionExpiredError`` (spec §5).
+    ``tokens`` is public so the app can save it after it changes.
+    """
+
+    def __init__(
+        self,
+        http: HttpClient,
+        config: OAuthConfig,
+        tokens: Tokens | None = None,
+        clock: Callable[[], datetime] = lambda: datetime.now(UTC),
+    ) -> None:
+        self.http = http
+        self.config = config
+        self.tokens = tokens
+        self._clock = clock
+
+    def authorize(
+        self,
+        open_browser: Callable[[str], object] = webbrowser.open,
+        timeout: float = AUTH_TIMEOUT_SECONDS,
+    ) -> None:
+        self.tokens = run_authorization(self.http, self.config, open_browser, timeout)
+
+    def _refresh(self) -> None:
+        if self.tokens is None or not self.tokens.refresh_token:
+            raise PermissionExpiredError()
+        self.tokens = refresh(self.http, self.config, self.tokens.refresh_token, self._clock())
+
+    def _access_token(self) -> str:
+        if self.tokens is None:
+            raise PermissionExpiredError()
+        expires_at = self.tokens.expires_at
+        if expires_at is not None and expires_at - REFRESH_MARGIN <= self._clock():
+            self._refresh()
+        assert self.tokens is not None
+        return self.tokens.access_token
+
+    def get_json(
+        self, url: str, params: Mapping[str, str | int] | None = None
+    ) -> dict[str, Any]:
+        """Authorised ``GET``."""
+        try:
+            return self.http.get_json(url, params, self._bearer())
+        except HttpError as exc:
+            if exc.status != UNAUTHORIZED:
+                raise
+        self._refresh()
+        try:
+            return self.http.get_json(url, params, self._bearer())
+        except HttpError as exc:
+            if exc.status == UNAUTHORIZED:
+                raise PermissionExpiredError() from exc
+            raise
+
+    def _bearer(self) -> dict[str, str]:
+        return {"Authorization": f"Bearer {self._access_token()}"}

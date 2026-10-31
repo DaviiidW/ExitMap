@@ -180,7 +180,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Hecho cuando: tests: código recibido, `state` erróneo rechazado, `error=access_denied` →
     error comprensible, tiempo límite.
 
-- [ ] T024 — Gmail: listado
+- [x] T024 — Gmail: listado
   - Qué: `providers/gmail.py`: listado paginado de IDs con `after:/before:` e inclusión de
     Spam/Papelera según elección; total exacto.
   - Referencia: plan §4 "Gmail"; spec F2-1, F2-3.
