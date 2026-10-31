@@ -34,6 +34,10 @@ ERRORS: dict[str, tuple[str, str]] = {
         "Los datos de registro de la app no son válidos.",
         "Revisa que los has copiado completos siguiendo la guía de registro.",
     ),
+    "registration_missing": (
+        "Faltan los datos de registro de la app para este proveedor de correo.",
+        "Sigue la guía de registro y copia en ExitMap los datos que obtengas.",
+    ),
     "account_already_connected": (
         "Esta cuenta ya estaba conectada.",
         "",

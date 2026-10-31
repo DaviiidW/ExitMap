@@ -246,3 +246,15 @@ def choose_store(
     if EncryptedFileStore.exists(Path(data_dir) / CREDENTIALS_FILE_NAME):
         return StoreDecision(StoreNeed.PASSWORD)
     return StoreDecision(StoreNeed.CHOICE)
+
+
+def store_from_choice(db: Database, data_dir: Path, password: str | None) -> CredentialStore:
+    """Store after the choice of a user without keyring (F10-2).
+
+    With ``password`` → a new encrypted file protected by it. Without it → session mode,
+    which stays on as the setting so the user is not asked again.
+    """
+    if password is None:
+        set_session_mode(db, True)
+        return MemoryStore()
+    return EncryptedFileStore.create(Path(data_dir) / CREDENTIALS_FILE_NAME, password)

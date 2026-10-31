@@ -135,6 +135,11 @@ class GmailProvider:
             http or HttpClient(), gmail_config(client_id, client_secret, endpoints), tokens
         )
 
+    @property
+    def tokens(self) -> Tokens | None:
+        """Current tokens, so the app can keep them in the credential store (spec F10)."""
+        return self.session.tokens
+
     def authorize(self) -> None:
         """Ask the user for read-only access in the system browser (spec F1-4, F1-6)."""
         self.session.authorize(self._open_browser)

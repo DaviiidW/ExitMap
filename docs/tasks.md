@@ -227,7 +227,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
 
 ## Fase 6 — Servicios de aplicación
 
-- [ ] T029 — Conectar cuenta
+- [x] T029 — Conectar cuenta
   - Qué: `app/accounts.py`: exigir datos de registro, autorizar, obtener email, no duplicar,
     guardar credenciales según la política.
   - Referencia: spec F1-2, F1-3, F1-5, F1-6, F1-7, F10-1, F10-2.

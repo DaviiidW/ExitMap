@@ -11,6 +11,7 @@ from keyring.errors import KeyringError, PasswordDeleteError
 
 from exitmap.domain.models import Provider
 from exitmap.providers.base import Folders, Period, RevokeNotSupported
+from exitmap.providers.oauth import Tokens
 
 MAILBOX_PATH = Path(__file__).resolve().parent / "fixtures" / "mailbox.json"
 
@@ -21,17 +22,30 @@ class FakeMailProvider:
     The message date comes from its ``Date`` header, as with a real provider.
     """
 
-    def __init__(self, email: str, mailbox_path: Path = MAILBOX_PATH) -> None:
+    def __init__(
+        self,
+        email: str,
+        mailbox_path: Path = MAILBOX_PATH,
+        tokens: Tokens | None = None,
+        authorize_error: Exception | None = None,
+        revoke_error: Exception | None = None,
+    ) -> None:
         data = json.loads(mailbox_path.read_text(encoding="utf-8"))
         account = data["accounts"][email]
         self.email = email
         self.provider = Provider(account["provider"])
         self.messages = {m["id"]: m for m in account["messages"]}
+        self.tokens = tokens
+        self.authorize_error = authorize_error
+        self.revoke_error = revoke_error
         self.authorized = False
         self.revoked = False
 
     def authorize(self) -> None:
+        if self.authorize_error is not None:
+            raise self.authorize_error
         self.authorized = True
+        self.tokens = Tokens(f"access-{self.email}", f"refresh-{self.email}", None)
 
     def account_email(self) -> str:
         return self.email
@@ -56,9 +70,39 @@ class FakeMailProvider:
         return self.messages[message_id]["body"]
 
     def revoke(self) -> None:
+        if self.revoke_error is not None:
+            raise self.revoke_error
         if self.provider is Provider.OUTLOOK:
             raise RevokeNotSupported()
         self.revoked = True
+
+
+class FakeProviderFactory:
+    """``ProviderFactory`` that gives ``FakeMailProvider``s of the test mailbox.
+
+    ``next_email`` is the account the next authorization returns; ``authorize_error`` and
+    ``revoke_error`` make the next providers fail. Built providers are kept in ``built``.
+    """
+
+    def __init__(self, next_email: str = "ana.prueba@gmail.com") -> None:
+        self.next_email = next_email
+        self.authorize_error: Exception | None = None
+        self.revoke_error: Exception | None = None
+        self.built: list[tuple[Provider, object, Tokens | None, FakeMailProvider]] = []
+
+    def __call__(self, provider, registration, tokens):
+        mail = FakeMailProvider(
+            self.next_email,
+            tokens=tokens,
+            authorize_error=self.authorize_error,
+            revoke_error=self.revoke_error,
+        )
+        self.built.append((provider, registration, tokens, mail))
+        return mail
+
+    @property
+    def last(self) -> FakeMailProvider:
+        return self.built[-1][3]
 
 
 class ControlledMailProvider(FakeMailProvider):

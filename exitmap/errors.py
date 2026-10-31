@@ -53,6 +53,10 @@ class InvalidRegistrationError(ExitMapError):
     key = "invalid_registration"
 
 
+class RegistrationMissingError(ExitMapError):
+    key = "registration_missing"
+
+
 class AccountAlreadyConnectedError(ExitMapError):
     key = "account_already_connected"
 

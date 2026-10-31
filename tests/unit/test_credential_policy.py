@@ -11,6 +11,7 @@ from exitmap.storage.credentials import (
     choose_store,
     session_mode,
     set_session_mode,
+    store_from_choice,
 )
 from exitmap.storage.db import Database
 
@@ -71,3 +72,20 @@ def test_session_mode_wins_over_encrypted_file(db, tmp_path):
     set_session_mode(db, True)
 
     assert isinstance(choose_store(db, tmp_path, fail.Keyring()).store, MemoryStore)
+
+
+def test_choosing_session_mode_turns_the_setting_on(db, tmp_path):
+    """F10-2: choosing session mode keeps it as the setting."""
+    store = store_from_choice(db, tmp_path, password=None)
+
+    assert isinstance(store, MemoryStore)
+    assert session_mode(db)
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_choosing_a_password_creates_the_encrypted_file(db, tmp_path):
+    store = store_from_choice(db, tmp_path, "clave")
+
+    assert isinstance(store, EncryptedFileStore)
+    assert not session_mode(db)
+    assert EncryptedFileStore.exists(tmp_path / CREDENTIALS_FILE_NAME)
