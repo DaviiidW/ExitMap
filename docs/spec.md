@@ -243,7 +243,8 @@ segura, o no se guarde si así lo prefiero.
    usuario final conecta una cuenta, entonces las credenciales se guardan en el llavero y,
    al reabrir la app, la cuenta sigue conectada.
 2. Dado que el sistema no tiene llavero, cuando el usuario final conecta su primera cuenta,
-   entonces debe elegir entre crear una contraseña maestra o usar el modo sesión.
+   entonces debe elegir entre crear una contraseña maestra o usar el modo sesión. Si elige
+   el modo sesión, queda activado como ajuste (F10-6) y no se le vuelve a preguntar.
 3. Dado que se usa contraseña maestra, cuando el usuario final abre la app, entonces se le
    pide la contraseña antes de acceder a sus cuentas.
 4. Dado que se usa contraseña maestra, cuando el usuario final introduce una incorrecta,
@@ -252,7 +253,8 @@ segura, o no se guarde si así lo prefiero.
    restablecerla, entonces se borran las credenciales cifradas, crea una contraseña nueva y
    debe reconectar sus cuentas; los resultados y los estados se conservan.
 6. Dado cualquier sistema, cuando el usuario final activa el modo sesión en los ajustes,
-   entonces las credenciales no se guardan en disco.
+   entonces las credenciales no se guardan en disco y se borran las que ya estuvieran
+   guardadas; las cuentas siguen en la lista, pero debe reconectarlas.
 7. Dado que el modo sesión está activo, cuando el usuario final cierra y reabre la app,
    entonces debe reconectar sus cuentas, y los resultados y los estados se conservan.
 
@@ -268,6 +270,11 @@ segura, o no se guarde si así lo prefiero.
 - **Cuenta ya conectada:** se aplica F1-7.
 - **Servicio sin enlace en catálogo ni en correos:** se usa la web principal del dominio
   (F4-3).
+- **Llavero no disponible al guardar o leer credenciales** (bloqueado o acceso denegado):
+  se indica que no se ha podido usar el llavero y se propone desbloquearlo o activar el modo
+  sesión.
+- **Fichero de credenciales cifradas dañado:** se trata como contraseña incorrecta; el
+  usuario final puede restablecerla (F10-5) sin perder resultados ni estados.
 - **Cualquier error:** el mensaje indica qué ha fallado y, si existe, la solución más
   probable, sin mostrar contenido de correos ni credenciales (constitución, 5 y 6).
 

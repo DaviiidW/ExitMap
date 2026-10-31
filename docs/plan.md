@@ -201,7 +201,21 @@ propios (principio 6).
   1. Modo sesión activado (ajuste) → `MemoryStore`: nada en disco; al cerrar se pierden.
   2. Llavero disponible → `KeyringStore`.
   3. Sin llavero → el usuario elige contraseña maestra (`EncryptedFileStore`: scrypt + Fernet,
-     sal aleatoria; se pide al abrir la app) o modo sesión.
+     sal aleatoria; se pide al abrir la app) o modo sesión. Elegir modo sesión activa el
+     ajuste (F10-2).
+  - Orden de la política (`choose_store`): modo sesión → llavero → fichero cifrado. Si hay
+    llavero, se usa aunque exista un fichero cifrado. Sin llavero: si existe el fichero se
+    pide la contraseña; si no, el usuario elige.
+  - Ajuste `session_mode` en `settings` (`"1"`/`"0"`, desactivado por defecto). Al activarlo
+    se borran las credenciales guardadas en el llavero o en el fichero cifrado (F10-6).
+  - Fichero cifrado: `credentials.enc` en la carpeta de datos; JSON con la sal (16 bytes) y
+    un único bloque Fernet con todas las credenciales. Se reescribe entero en cada cambio
+    (fichero temporal + renombrado atómico) y tiene permisos 0600 en Linux. scrypt con
+    `n=2^15, r=8, p=1` (valores recomendados para inicio de sesión interactivo).
+  - Un fichero dañado no se distingue de una contraseña incorrecta: mismo error y misma
+    salida (restablecer, F10-5).
+  - Un fallo del llavero en uso (bloqueado, acceso denegado) lanza `KeyringUnavailableError`
+    con mensaje comprensible (principio 5).
 - Datos de registro OAuth (client ID y, en Google, client secret de escritorio, que Google no
   considera confidencial) → en el mismo almacén de credenciales.
 - Logs: sin contenido de correos ni credenciales (filtro + test). Errores con mensaje
