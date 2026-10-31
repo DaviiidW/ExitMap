@@ -93,6 +93,9 @@ Linux → `~/.local/share/applications/exitmap.desktop` (+ copia en el escritori
 Windows → `.lnk` en Escritorio y menú Inicio mediante PowerShell (`WScript.Shell`), lanzando
 `pythonw.exe -m exitmap` para que no aparezca consola. También se puede ejecutar
 `python -m exitmap`.
+El paquete se instala en modo editable (`pip install -e .`), porque la app lee `data/` y
+`docs/` del repositorio (rutas relativas al código); con una instalación normal no los
+encontraría. Los mensajes del script están en español, como la interfaz de la v1.
 
 **Carpeta de datos:** Linux `$XDG_DATA_HOME/exitmap` (o `~/.local/share/exitmap`), Windows
 `%APPDATA%\ExitMap`. Función propia en `config.py` (sin `platformdirs`). Permisos 0600/0700
