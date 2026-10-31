@@ -124,8 +124,11 @@ petición (`providers/http.py`) lanza la excepción "sin conexión"; la interfaz
 conexión (deshabilita analizar, baja automática y revocación) hasta el siguiente intento que
 tenga éxito.
 
-**OAuth (ambos):** navegador del sistema → redirección a `http://127.0.0.1:<puerto aleatorio>`,
-PKCE S256, parámetro `state` verificado, servidor local de una sola petición con tiempo límite.
+**OAuth (ambos):** navegador del sistema → redirección a un servidor local que escucha en
+`127.0.0.1:<puerto aleatorio>`. La `redirect_uri` usa `http://127.0.0.1:<puerto>` en Google y
+`http://localhost:<puerto>` en Microsoft (Microsoft compara el host con el registrado,
+`http://localhost`, e ignora el puerto). PKCE S256, parámetro `state` verificado, servidor
+local de una sola petición con tiempo límite.
 Refresco automático; si el refresco falla → error "permiso caducado o retirado" con opción de
 reconectar (caso límite de la spec).
 

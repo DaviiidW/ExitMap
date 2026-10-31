@@ -173,7 +173,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Hecho cuando: tests unitarios de PKCE/URL y de integración contra servidor de tokens
     local (intercambio, refresco, refresco rechazado → error "permiso caducado").
 
-- [ ] T023 — OAuth: receptor loopback
+- [x] T023 — OAuth: receptor loopback
   - Qué: servidor local de una sola petición en puerto aleatorio, verificación de `state`,
     tiempo límite, denegación del usuario.
   - Referencia: plan §4, §7; spec F1-6.

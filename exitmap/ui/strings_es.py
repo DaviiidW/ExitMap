@@ -26,6 +26,10 @@ ERRORS: dict[str, tuple[str, str]] = {
         "La autorización no se ha completado a tiempo en el navegador.",
         "Vuelve a pulsar «Conectar cuenta» y termina la autorización en el navegador.",
     ),
+    "authorization_invalid": (
+        "La respuesta de autorización recibida no corresponde a esta conexión y se ha rechazado.",
+        "Vuelve a pulsar «Conectar cuenta» y completa la autorización desde la ventana que se abra.",
+    ),
     "invalid_registration": (
         "Los datos de registro de la app no son válidos.",
         "Revisa que los has copiado completos siguiendo la guía de registro.",
@@ -59,3 +63,8 @@ ERRORS: dict[str, tuple[str, str]] = {
         "Desbloquea el llavero del sistema y vuelve a intentarlo, o activa el modo sesión en los ajustes.",
     ),
 }
+
+# Page shown in the browser after the authorization comes back to ExitMap (spec F1-6).
+AUTH_PAGE_TITLE = "ExitMap"
+AUTH_PAGE_DONE = "Ya puedes cerrar esta pestaña y volver a ExitMap."
+AUTH_PAGE_FAILED = "No se ha completado la autorización. Vuelve a ExitMap para ver qué ha pasado."

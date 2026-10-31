@@ -45,6 +45,10 @@ class AuthorizationTimeoutError(ExitMapError):
     key = "authorization_timeout"
 
 
+class AuthorizationInvalidError(ExitMapError):
+    key = "authorization_invalid"
+
+
 class InvalidRegistrationError(ExitMapError):
     key = "invalid_registration"
 
