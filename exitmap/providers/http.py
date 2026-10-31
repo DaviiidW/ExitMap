@@ -105,15 +105,30 @@ class HttpClient:
             all_headers.setdefault("Content-Type", "application/json")
         return self._send("POST", url, body, all_headers)
 
+    def post_form(self, url: str, form: Mapping[str, str]) -> int:
+        """``POST`` a form and return the 2xx status, without reading the answer as JSON.
+
+        For endpoints that answer with a web page, such as one-click unsubscribe links.
+        """
+        body = urllib.parse.urlencode(form).encode("ascii")
+        headers = {"Content-Type": "application/x-www-form-urlencoded"}
+        return self._request("POST", url, body, headers)[0]
+
     def _send(
         self, method: str, url: str, body: bytes | None, headers: dict[str, str]
     ) -> dict[str, Any]:
         headers.setdefault("Accept", "application/json")
+        return _decode(self._request(method, url, body, headers)[1])
+
+    def _request(
+        self, method: str, url: str, body: bytes | None, headers: dict[str, str]
+    ) -> tuple[int, bytes]:
+        """Status and body of a 2xx answer, retrying after 429."""
         for attempt in range(MAX_RETRIES + 1):
             request = urllib.request.Request(url, data=body, headers=headers, method=method)
             try:
                 with urllib.request.urlopen(request, timeout=self.timeout) as response:
-                    return _decode(response.read())
+                    return response.status, response.read()
             except urllib.error.HTTPError as exc:
                 with exc:
                     raw = exc.read()

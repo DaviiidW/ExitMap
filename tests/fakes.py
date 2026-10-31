@@ -164,3 +164,17 @@ class FakeKeyring(KeyringBackend):
         if (service, username) not in self.passwords:
             raise PasswordDeleteError("not found")
         del self.passwords[(service, username)]
+
+
+class FakeOpener:
+    """``Opener`` that records what would be opened instead of opening it."""
+
+    def __init__(self) -> None:
+        self.urls: list[str] = []
+        self.mails: list[str] = []
+
+    def open_url(self, url: str) -> None:
+        self.urls.append(url)
+
+    def open_mail(self, uri: str) -> None:
+        self.mails.append(uri)

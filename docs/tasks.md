@@ -246,7 +246,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Referencia: spec F3-2..4, F4-1, F4-2, F7-2, F8-5.
   - Hecho cuando: tests de integración con BD poblada para cada criterio citado.
 
-- [ ] T032 — Darse de baja
+- [x] T032 — Darse de baja
   - Qué: `app/unsubscribe.py`: POST one-click (éxito → *baja realizada*), fallo → motivo +
     abrir web, web, `mailto:` preparado; apertura con `webbrowser` / `os.startfile` /
     `xdg-open` inyectable.

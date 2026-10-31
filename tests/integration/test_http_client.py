@@ -82,3 +82,21 @@ def test_no_network_raises_offline():
         HttpClient(timeout=2).get_json(closed_port_url())
 
     assert "conexión" in info.value.user_message
+
+
+def test_post_form_returns_the_status_of_a_page_answer():
+    """Answers that are not JSON (a web page) are not decoded."""
+    with LocalServer(lambda request: Reply(202, raw=b"<html>ok</html>")) as server:
+        status = HttpClient().post_form(server.url + "/u", {"List-Unsubscribe": "One-Click"})
+
+    assert status == 202
+    assert server.requests[0].body == b"List-Unsubscribe=One-Click"
+    assert server.requests[0].headers["Content-Type"] == "application/x-www-form-urlencoded"
+
+
+def test_post_form_error_status_raises_http_error():
+    with LocalServer(lambda request: Reply(500, raw=b"<html>error</html>")) as server:
+        with pytest.raises(HttpError) as info:
+            HttpClient().post_form(server.url, {"a": "1"})
+
+    assert info.value.status == 500 and info.value.data == {}
