@@ -337,7 +337,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Referencia: spec §2, F1-2; plan §4, §8.
   - Hecho cuando: el desarrollador sigue la guía en una cuenta nueva y consigue conectar.
 
-- [ ] T045 — README en inglés
+- [x] T045 — README en inglés
   - Qué: `README.md`: qué es ExitMap, requisitos, instalación con `scripts/install.py`,
     resumen del registro OAuth y enlace a `docs/guia-registro.md`, licencia.
   - Referencia: `CLAUDE.md` (README en inglés); plan §2.
