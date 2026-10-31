@@ -161,6 +161,15 @@ class AccountService:
         self.store = store
         self._factory = factory
 
+    def with_db(self, db: Database) -> "AccountService":
+        """The same store and factory on another connection.
+
+        SQLite connections are bound to their thread, so the interface connects accounts
+        in a background thread with its own connection (the authorization waits for the
+        browser).
+        """
+        return AccountService(db, self.store, self._factory)
+
     def list_accounts(self) -> list[Account]:
         return self.db.list_accounts()
 

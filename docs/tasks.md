@@ -274,7 +274,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Hecho cuando: prueba de humo de Tk (se omite sin pantalla) y comprobación manual con una
     BD de ejemplo.
 
-- [ ] T036 — Conectar cuenta (interfaz)
+- [x] T036 — Conectar cuenta (interfaz)
   - Qué: elegir proveedor, formulario de datos de registro con enlace a
     `docs/guia-registro.md`, mensajes de error, lista de cuentas.
   - Referencia: spec F1-1, F1-2, F1-6, F1-7.

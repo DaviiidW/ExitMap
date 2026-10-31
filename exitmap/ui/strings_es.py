@@ -154,3 +154,26 @@ COLUMN_STATE = "Estado"
 # Mark of a service that sent email again after unsubscribing (spec F8-4).
 ALERT_MARK = "⚠ "
 ALERT_HINT = "⚠ Ha vuelto a enviarte correo después de darte de baja."
+
+# Common buttons and dialog titles.
+OK = "Aceptar"
+CANCEL = "Cancelar"
+ERROR_TITLE = "ExitMap: error"
+INFO_TITLE = "ExitMap"
+
+# Connect account (spec F1-1, F1-2, F1-6, F1-7).
+CONNECT_BUTTON = "Conectar cuenta"
+CHOOSE_PROVIDER_TITLE = "Conectar cuenta"
+CHOOSE_PROVIDER = "¿Qué tipo de cuenta quieres conectar?"
+REGISTRATION_TITLE = "Datos de registro de {provider}"
+REGISTRATION_INTRO = (
+    "Para conectar cuentas de {provider}, ExitMap necesita los datos de tu propio registro "
+    "de la app. Sigue la guía de registro y copia aquí los datos que obtengas."
+)
+CLIENT_ID = "Client ID:"
+CLIENT_SECRET = "Client secret:"
+GUIDE_LINK = "Abrir la guía de registro"
+WAITING_AUTHORIZATION = (
+    "Completa la autorización en el navegador que se ha abierto.\n"
+    "ExitMap solo pide permiso para leer tu correo."
+)

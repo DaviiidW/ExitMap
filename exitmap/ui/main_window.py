@@ -8,8 +8,10 @@ from tkinter import font, ttk
 
 from exitmap.app.accounts import AccountService
 from exitmap.app.services import ServiceCatalogue, ServiceFilter
+from exitmap.app.unsubscribe import Opener, SystemOpener
 from exitmap.domain.models import Service
 from exitmap.ui import presenters
+from exitmap.ui.dialogs import ConnectFlow, ConnectRunner
 from exitmap.ui import strings_es as text
 
 COLUMNS = (
@@ -27,11 +29,22 @@ class MainWindow(ttk.Frame):
     """Accounts panel on the left; search, filters and list on the right."""
 
     def __init__(
-        self, master: tk.Misc, accounts: AccountService, catalogue: ServiceCatalogue
+        self,
+        master: tk.Misc,
+        accounts: AccountService,
+        catalogue: ServiceCatalogue,
+        connect_runner: ConnectRunner | None = None,
+        opener: Opener | None = None,
     ) -> None:
         super().__init__(master, padding=8)
         self.accounts = accounts
         self.catalogue = catalogue
+        self.opener = opener or SystemOpener()
+        self.connect_flow = (
+            ConnectFlow(self, accounts, connect_runner, self.opener, self.refresh)
+            if connect_runner is not None
+            else None
+        )
         self._account_options: list[tuple[str, int | None]] = []
         self._relation_options = presenters.relation_filter_options()
         self._state_options = presenters.state_filter_options()
@@ -52,6 +65,15 @@ class MainWindow(ttk.Frame):
         self.account_list = tk.Listbox(panel, width=34, activestyle="none", exportselection=False)
         self.account_list.grid(row=0, column=0, sticky="ns")
         self.no_accounts = ttk.Label(panel, text=text.NO_ACCOUNTS)
+        buttons = ttk.Frame(panel)
+        buttons.grid(row=2, column=0, sticky="ew", pady=(6, 0))
+        self.connect_button = ttk.Button(
+            buttons,
+            text=text.CONNECT_BUTTON,
+            command=self.connect_account,
+            state="normal" if self.connect_flow else "disabled",
+        )
+        self.connect_button.pack(side="left")
 
     def _build_services_panel(self) -> None:
         panel = ttk.Frame(self)
@@ -103,6 +125,11 @@ class MainWindow(ttk.Frame):
         box.current(current if 0 <= current < len(options) else 0)
 
     # Data -------------------------------------------------------------------------------
+
+    def connect_account(self) -> None:
+        """Start connecting an account (F1)."""
+        if self.connect_flow is not None:
+            self.connect_flow.start()
 
     def refresh(self) -> None:
         """Reload accounts and services, keeping the search and filters."""
