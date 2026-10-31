@@ -286,7 +286,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Referencia: spec F2-1..5, F2-9, F2-10, F8-1, F8-2.
   - Hecho cuando: prueba de humo y comprobación manual con proveedor falso lento.
 
-- [ ] T038 — Ficha del servicio
+- [x] T038 — Ficha del servicio
   - Qué: `ui/service_detail.py`: datos, evidencia, origen del enlace, botones de baja,
     eliminar cuenta y revocar acceso con confirmación, selector de estado.
   - Referencia: spec F4, F5-1, F5-6, F6, F7.

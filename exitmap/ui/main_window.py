@@ -4,16 +4,17 @@ Thin widgets: what is shown comes from ``app.services`` and ``ui.presenters``.
 """
 
 import tkinter as tk
-from tkinter import font, ttk
+from tkinter import ttk
 
 from exitmap.app.accounts import AccountService
 from exitmap.app.analysis import AnalysisService
 from exitmap.app.services import ServiceCatalogue, ServiceFilter
-from exitmap.app.unsubscribe import Opener, SystemOpener
+from exitmap.app.unsubscribe import Opener, SystemOpener, UnsubscribeService
 from exitmap.domain.models import Account, Service
 from exitmap.ui import presenters
 from exitmap.ui.analysis_dialog import AnalysisDialog
-from exitmap.ui.dialogs import ConnectFlow, ConnectRunner
+from exitmap.ui.dialogs import ConnectFlow, ConnectRunner, fit_treeview_rows
+from exitmap.ui.service_detail import ServiceDetailWindow
 from exitmap.ui import strings_es as text
 
 COLUMNS = (
@@ -38,6 +39,7 @@ class MainWindow(ttk.Frame):
         connect_runner: ConnectRunner | None = None,
         opener: Opener | None = None,
         analysis: AnalysisService | None = None,
+        unsubscribe: UnsubscribeService | None = None,
     ) -> None:
         super().__init__(master, padding=8)
         self.accounts = accounts
@@ -45,6 +47,7 @@ class MainWindow(ttk.Frame):
         self.analysis = analysis
         self.analysis_dialog: AnalysisDialog | None = None
         self.opener = opener or SystemOpener()
+        self.unsubscribe = unsubscribe or UnsubscribeService(catalogue.db, opener=self.opener)
         self.connect_flow = (
             ConnectFlow(self, accounts, connect_runner, self.opener, self.refresh)
             if connect_runner is not None
@@ -103,9 +106,7 @@ class MainWindow(ttk.Frame):
         self._set_options(self.relation_filter, self._relation_options)
         self._set_options(self.state_filter, self._state_options)
 
-        # Rows as tall as the font, so they are not clipped on scaled screens.
-        row_height = font.nametofont("TkDefaultFont").metrics("linespace") + 6
-        ttk.Style(self).configure("Treeview", rowheight=row_height)
+        fit_treeview_rows(self)
         self.tree = ttk.Treeview(
             panel, columns=[c[0] for c in COLUMNS], show="headings", selectmode="browse"
         )
@@ -113,6 +114,8 @@ class MainWindow(ttk.Frame):
             self.tree.heading(key, text=heading, anchor="w")
             self.tree.column(key, width=width, anchor="w")
         self.tree.tag_configure(ALERT_TAG, background=ALERT_BACKGROUND)
+        self.tree.bind("<Double-1>", lambda _: self.open_selected_service())
+        self.tree.bind("<Return>", lambda _: self.open_selected_service())
         self.tree.grid(row=1, column=0, sticky="nsew")
         scroll = ttk.Scrollbar(panel, orient="vertical", command=self.tree.yview)
         scroll.grid(row=1, column=1, sticky="ns")
@@ -175,6 +178,15 @@ class MainWindow(ttk.Frame):
         if not selection:
             return None
         return list(self._accounts.values())[selection[0]]
+
+    def open_selected_service(self) -> ServiceDetailWindow | None:
+        """Open the page of the selected service (F4)."""
+        selection = self.tree.selection()
+        if not selection:
+            return None
+        return ServiceDetailWindow(
+            self, int(selection[0]), self.catalogue, self.unsubscribe, self.refresh_services
+        )
 
     def refresh(self) -> None:
         """Reload accounts and services, keeping the search and filters."""

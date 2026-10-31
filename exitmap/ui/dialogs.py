@@ -13,7 +13,7 @@ import threading
 import tkinter as tk
 from collections.abc import Callable
 from pathlib import Path
-from tkinter import messagebox, ttk
+from tkinter import font, messagebox, ttk
 from typing import Any
 
 from exitmap.app.accounts import AccountService, ConnectResult, Registration
@@ -34,6 +34,12 @@ GUIDE_PATH = Path(__file__).resolve().parents[2] / "docs" / "guia-registro.md"
 POLL_MS = 100
 
 logger = logging.getLogger(__name__)
+
+
+def fit_treeview_rows(widget: tk.Misc) -> None:
+    """Rows as tall as the font, so they are not clipped on scaled screens."""
+    row_height = font.nametofont("TkDefaultFont").metrics("linespace") + 6
+    ttk.Style(widget).configure("Treeview", rowheight=row_height)
 
 
 def show_error(parent: tk.Misc, error: ExitMapError) -> None:

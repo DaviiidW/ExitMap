@@ -6,6 +6,7 @@
 - Texts of the confirmations shown before unsubscribing and removing an account
   (spec F5-1, F9-1).
 - Rows and filter options of the main window (spec F3, F8-4).
+- Fields, evidence and action results of the service page (spec F4, F5-2..5, F6).
 """
 
 from dataclasses import dataclass
@@ -14,8 +15,9 @@ from enum import StrEnum
 
 from exitmap.app.accounts import RemovalSummary
 from exitmap.app.analysis import AnalysisMode, new_only_period
-from exitmap.app.services import ServiceFilter
-from exitmap.domain.models import Account, RelationType, Service, State
+from exitmap.app.services import ServiceDetail, ServiceFilter
+from exitmap.app.unsubscribe import Outcome, UnsubscribeResult
+from exitmap.domain.models import Account, Evidence, RelationType, Service, State
 from exitmap.errors import ExitMapError, InvalidDateError, InvalidDateRangeError
 from exitmap.providers.base import Folders, Period
 from exitmap.ui import strings_es as text
@@ -232,3 +234,73 @@ def service_row(service: Service, accounts: dict[int, Account]) -> tuple[str, ..
         relations_text(service.relation_types),
         text.STATE_LABELS[service.state.value],
     )
+
+
+def date_text(moment: datetime | None) -> str:
+    """Date in DD/MM/AAAA, in local time."""
+    return moment.astimezone().strftime(DATE_FORMAT) if moment is not None else ""
+
+
+def link_text(service: Service) -> str:
+    """Management link and where it comes from (F4-4)."""
+    if not service.manage_url:
+        return text.NO_MANAGE_URL
+    if service.manage_url_source is None:
+        return service.manage_url
+    return text.LINK_WITH_SOURCE.format(
+        url=service.manage_url,
+        source=text.LINK_SOURCE_LABELS[service.manage_url_source.value],
+    )
+
+
+def detail_fields(detail: ServiceDetail) -> list[tuple[str, str]]:
+    """What the service page shows (F4-1, F4-4)."""
+    service = detail.service
+    return [
+        (text.FIELD_NAME, service.name),
+        (text.FIELD_DOMAIN, service.domain),
+        (text.FIELD_ACCOUNT, detail.account.email),
+        (text.FIELD_RELATIONS, relations_text(service.relation_types)),
+        (text.FIELD_FIRST_EMAIL, date_text(service.first_email_at)),
+        (text.FIELD_LAST_EMAIL, date_text(service.last_email_at)),
+        (text.FIELD_EMAIL_COUNT, str(service.email_count)),
+        (text.FIELD_STATE, text.STATE_LABELS[service.state.value]),
+        (text.FIELD_MANAGE_URL, link_text(service)),
+    ]
+
+
+def evidence_row(evidence: Evidence) -> tuple[str, str, str]:
+    """Subject, date and relation type of an email of the evidence (F4-2)."""
+    return (
+        evidence.subject,
+        date_text(evidence.sent_at),
+        text.RELATION_LABELS[evidence.relation_type.value],
+    )
+
+
+def can_unsubscribe(service: Service) -> bool:
+    """Commercial subscription with a usable unsubscribe method (F5-1)."""
+    return (
+        RelationType.SUBSCRIPTION in service.relation_types
+        and service.unsubscribe_method is not None
+        and bool(service.unsubscribe_target)
+    )
+
+
+def management_confirmation(service: Service, action: str) -> str:
+    """Text shown before opening the page to delete the account or revoke access (F6-1)."""
+    return text.OPEN_MANAGEMENT_CONFIRM.format(
+        service=_service_label(service), action=action, url=service.manage_url or ""
+    )
+
+
+def unsubscribe_result_message(result: UnsubscribeResult, service: Service) -> str:
+    """What happened after confirming the unsubscribe (F5-2..5)."""
+    if result.outcome is Outcome.DONE:
+        return text.UNSUBSCRIBE_DONE.format(service=_service_label(service))
+    if result.outcome is Outcome.FAILED_WEB_OPENED:
+        problem = result.error.problem if result.error else ""
+        return f"{problem}\n\n{text.UNSUBSCRIBE_WEB_FALLBACK}".strip()
+    if result.outcome is Outcome.WEB_OPENED:
+        return text.UNSUBSCRIBE_WEB_OPENED
+    return text.UNSUBSCRIBE_MAIL_PREPARED

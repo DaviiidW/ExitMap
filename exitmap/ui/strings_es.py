@@ -207,3 +207,51 @@ ANALYSIS_STOPPED = (
     "El análisis se ha detenido y no se ha guardado nada; se conservan los resultados del "
     "último análisis completo, si lo hay. Tendrás que empezarlo de nuevo."
 )
+
+# Service page (spec F4, F5, F6, F7).
+DETAIL_TITLE = "Ficha de {service}"
+FIELD_NAME = "Nombre"
+FIELD_DOMAIN = "Dominio"
+FIELD_ACCOUNT = "Cuenta de correo"
+FIELD_RELATIONS = "Tipos de relación"
+FIELD_FIRST_EMAIL = "Primer correo"
+FIELD_LAST_EMAIL = "Último correo"
+FIELD_EMAIL_COUNT = "Número de correos"
+FIELD_STATE = "Estado"
+FIELD_MANAGE_URL = "Enlace de gestión"
+NO_MANAGE_URL = "Sin enlace"
+LINK_WITH_SOURCE = "{url} (origen: {source})"
+LINK_SOURCE_LABELS = {
+    "catalog": "catálogo",
+    "email": "correo",
+    "homepage": "web principal",
+}
+EVIDENCE_TITLE = "Evidencia: correos en los que se basa la detección"
+EVIDENCE_SUBJECT = "Asunto"
+EVIDENCE_DATE = "Fecha"
+EVIDENCE_RELATION = "Tipo"
+UNSUBSCRIBE_BUTTON = "Darse de baja"
+DELETE_ACCOUNT_BUTTON = "Eliminar cuenta"
+REVOKE_ACCESS_BUTTON = "Revocar acceso"
+OPEN_MANAGEMENT_CONFIRM = (
+    "Se abrirá en el navegador la página de {service} donde puedes {action}:\n{url}\n\n"
+    "ExitMap no cambia el estado: márcalo tú cuando termines."
+)
+DELETE_ACCOUNT_ACTION = "eliminar tu cuenta"
+REVOKE_ACCESS_ACTION = "revocar los accesos que le concediste"
+
+# Unsubscribe results (spec F5-2..5).
+UNSUBSCRIBE_DONE = "Te has dado de baja de {service}. Su estado es ahora «Baja realizada»."
+UNSUBSCRIBE_WEB_FALLBACK = (
+    "Se ha abierto la página de baja en el navegador para que la completes allí. "
+    "El estado no ha cambiado: márcalo tú cuando termines."
+)
+UNSUBSCRIBE_WEB_OPENED = (
+    "Se ha abierto la página de baja en el navegador. "
+    "El estado no ha cambiado: márcalo tú cuando termines."
+)
+UNSUBSCRIBE_MAIL_PREPARED = (
+    "Este servicio solo permite darse de baja enviando un correo. Se ha abierto tu programa "
+    "de correo con el mensaje preparado: revísalo y envíalo tú, ExitMap no lo envía. "
+    "El estado no ha cambiado: márcalo tú cuando termines."
+)
