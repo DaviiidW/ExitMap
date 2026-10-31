@@ -321,7 +321,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
 
 ## Fase 8 — Instalación y documentación
 
-- [ ] T043 — Script de instalación y acceso directo
+- [x] T043 — Script de instalación y acceso directo
   - Qué: `scripts/install.py` (crea `.venv`, instala, crea `.desktop` en Linux o `.lnk` vía
     PowerShell en Windows con `pythonw.exe`) e icono provisional sencillo en
     `assets/exitmap.png` y `assets/exitmap.ico`.
