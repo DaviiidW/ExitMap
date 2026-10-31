@@ -65,6 +65,10 @@ class AnalysisInProgressError(ExitMapError):
     key = "analysis_in_progress"
 
 
+class InvalidDateError(ExitMapError):
+    key = "invalid_date"
+
+
 class InvalidDateRangeError(ExitMapError):
     key = "invalid_date_range"
 

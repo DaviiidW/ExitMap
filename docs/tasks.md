@@ -260,7 +260,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
 
 ## Fase 7 — Interfaz
 
-- [ ] T034 — Presentadores
+- [x] T034 — Presentadores
   - Qué: `ui/presenters.py`: estado de la lista (mensajes vacíos), validación de fechas
     DD/MM/AAAA, opciones por defecto del análisis, texto de confirmación de baja, de quitar
     cuenta y de re-análisis.

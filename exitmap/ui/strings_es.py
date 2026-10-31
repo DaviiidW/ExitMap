@@ -46,6 +46,10 @@ ERRORS: dict[str, tuple[str, str]] = {
         "Ya hay un análisis en curso.",
         "Espera a que termine o cancélalo antes de iniciar otro.",
     ),
+    "invalid_date": (
+        "La fecha no es válida.",
+        "Escríbela con el formato DD/MM/AAAA, por ejemplo 31/01/2025.",
+    ),
     "invalid_date_range": (
         "La fecha de inicio es posterior a la fecha de fin.",
         "Corrige las fechas para que el inicio sea anterior o igual al fin.",
@@ -72,3 +76,44 @@ ERRORS: dict[str, tuple[str, str]] = {
 AUTH_PAGE_TITLE = "ExitMap"
 AUTH_PAGE_DONE = "Ya puedes cerrar esta pestaña y volver a ExitMap."
 AUTH_PAGE_FAILED = "No se ha completado la autorización. Vuelve a ExitMap para ver qué ha pasado."
+
+# Analysis options (spec F2-1, F2-3, F8-1, F8-2).
+PERIOD_WHOLE_MAILBOX = "Buzón entero"
+PERIOD_LAST_YEAR = "Último año"
+PERIOD_CUSTOM = "Rango de fechas personalizado"
+MODE_ALL = "Todos los correos"
+MODE_NEW_ONLY = "Solo los correos nuevos desde el último análisis"
+REANALYSIS_NOTICE = (
+    "Esta cuenta ya se ha analizado antes. Se mantendrán los estados que hayas asignado "
+    "a cada servicio."
+)
+
+# Empty results (spec F2-10, F3-5).
+NO_SERVICES_FOUND = (
+    "El análisis ha terminado sin encontrar ningún servicio. Prueba a ampliar el periodo "
+    "o a incluir Spam y Papelera."
+)
+NO_MATCHES = "Ningún servicio coincide con la búsqueda o los filtros."
+
+# Unsubscribe confirmation (spec F5-1).
+UNSUBSCRIBE_CONFIRM = (
+    "¿Darse de baja del correo comercial de {service} en la cuenta {account}?\n\n"
+    "Método: {method}."
+)
+UNSUBSCRIBE_METHOD_LABELS = {
+    "one_click": "baja automática",
+    "web": "se abrirá esta web: {url}",
+    "mailto": "se preparará un correo de baja",
+}
+
+# Account removal confirmation (spec F9-1).
+REMOVE_ACCOUNT_CONFIRM = (
+    "¿Quitar la cuenta {account} de ExitMap?\n\n"
+    "Se borrarán de este equipo:\n"
+    "- las credenciales de acceso a la cuenta,\n"
+    "- los resultados del análisis ({count}),\n"
+    "- los estados que hayas asignado a sus servicios.\n\n"
+    "Esta acción no se puede deshacer."
+)
+SERVICE_COUNT_ONE = "1 servicio"
+SERVICE_COUNT_MANY = "{count} servicios"
