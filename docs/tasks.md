@@ -312,7 +312,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Referencia: spec §5; plan §4 "Detección de sin conexión".
   - Hecho cuando: tests de presentador y comprobación manual desconectando la red.
 
-- [ ] T042 — Arranque completo
+- [x] T042 — Arranque completo
   - Qué: `__main__.py`: carpeta de datos, logging, política de credenciales, aviso de
     análisis interrumpido, ventana principal; mensaje claro si falta `tkinter`.
   - Referencia: spec F2-6, F2-8; plan §2, §3 "Marca de interrupción", §8.

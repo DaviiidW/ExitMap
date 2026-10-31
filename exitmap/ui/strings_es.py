@@ -334,3 +334,19 @@ OFFLINE_NOTICE = (
 )
 AFFECTED_ACCOUNT = "Cuenta afectada: {account}."
 RECONNECT_BUTTON = "Volver a conectar"
+
+# Start (spec F2-6; plan §8).
+ANALYSIS_INTERRUPTED = (
+    "El último análisis no llegó a terminar (se cerró ExitMap o se perdió la conexión). "
+    "Sus resultados se han descartado y se conservan los del último análisis completo, si "
+    "lo hay. Tendrás que empezarlo de nuevo."
+)
+NO_TKINTER = (
+    "ExitMap necesita tkinter para mostrar su ventana y no está instalado. En Linux, "
+    "instala el paquete python3-tk (por ejemplo, «sudo apt install python3-tk») y vuelve "
+    "a abrir ExitMap."
+)
+NO_DISPLAY = (
+    "ExitMap no ha podido abrir su ventana porque no hay una pantalla disponible. Ábrelo "
+    "desde una sesión de escritorio."
+)

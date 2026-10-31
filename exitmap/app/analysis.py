@@ -444,6 +444,18 @@ class AnalysisService:
         return Finished(len(detected))
 
 
+def take_interrupted_mark(db: Database) -> bool:
+    """Whether the last analysis was interrupted (the app was closed while it ran); the
+    mark is removed so the user is told only once (spec F2-6; plan §3).
+
+    Its results were never committed, so the last complete analysis is what remains.
+    """
+    if db.get_setting(IN_PROGRESS_KEY) is None:
+        return False
+    db.delete_setting(IN_PROGRESS_KEY)
+    return True
+
+
 def _user_error(exc: Exception) -> ExitMapError:
     """Error to show to the user; only the exception type is logged (constitution 6)."""
     logger.warning("Analysis failed: %s", type(exc).__name__)

@@ -112,7 +112,10 @@ class ModalDialog(tk.Toplevel):
     def __init__(self, parent: tk.Misc, title: str) -> None:
         super().__init__(parent)
         self.title(title)
-        self.transient(parent.winfo_toplevel())
+        if parent.winfo_toplevel().winfo_viewable():
+            # A dialog transient for a hidden window (the master password asked before
+            # the main window appears) may never be shown.
+            self.transient(parent.winfo_toplevel())
         self.resizable(False, False)
         self.result: Any = None
         self.body = ttk.Frame(self, padding=12)
