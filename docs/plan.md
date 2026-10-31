@@ -70,6 +70,10 @@ tests/unit, tests/integration, tests/fixtures
 **Concurrencia:** el análisis corre en un `threading.Thread`; progreso por `queue.Queue`
 leída desde Tk con `after()`. Cancelación con `threading.Event`. Un único análisis a la vez:
 `AnalysisService` tiene un cerrojo y la UI deshabilita "Analizar" (F2-9).
+Conectar y quitar cuenta también corren en segundo plano (la autorización espera al
+navegador y la revocación usa la red), con `run_in_background` (`ui/dialogs.py`). Como las
+conexiones SQLite están ligadas a su hilo, cada tarea abre su propia conexión y usa
+`AccountService.with_db(db)`, que comparte el almacén de credenciales y la fábrica.
 
 **Interfaz `MailProvider`** (una implementación por proveedor, probadas por separado):
 `authorize()`, `account_email()`, `list_message_ids(period, folders)`,
@@ -115,10 +119,19 @@ settings(key, value)                                         -- session_mode, et
 - Borrar una cuenta = `DELETE` en cascada + borrado de sus credenciales (F9-2).
 - Los asuntos de la evidencia se guardan en local (permitido); nunca van a los logs.
 
+**Periodo del análisis** (`ui/presenters.py`, F2-1, F2-2):
+- "Buzón entero": sin límites.
+- "Último año": desde el mismo momento del año anterior (si es 29 de febrero, el 28).
+- "Rango de fechas personalizado": fechas DD/MM/AAAA; se incluyen los dos días, de la
+  medianoche local del día de inicio a la del día siguiente al de fin. Fecha mal escrita →
+  `InvalidDateError`; inicio posterior al fin → `InvalidDateRangeError`.
+
 **Fusión al terminar un análisis completo** (una sola transacción):
 - Análisis "todos los correos": recalcula estadísticas y evidencia; **conserva `state`**.
 - Servicios existentes que no aparecen en un re-análisis completo: se mantienen sin cambios.
 - "Solo nuevos": consulta desde `last_complete_analysis_at`; suma recuentos y añade evidencia.
+  En este modo no se aplica el periodo elegido (la UI lo deshabilita). En un re-análisis la
+  opción marcada por defecto es "Todos los correos".
 - Aviso F8-4: `state = unsubscribed` y correo nuevo con fecha > `state_changed_at` → `has_alert = 1`.
   Abrir la ficha pone `has_alert = 0` (F8-5).
 - Cancelación o interrupción: no se hace `COMMIT` → quedan los datos del último análisis completo.
@@ -143,6 +156,8 @@ conexión (spec §5). Si se intentan y fallan, se aplica lo de siempre: la baja 
 local de una sola petición con tiempo límite.
 Refresco automático; si el refresco falla → error "permiso caducado o retirado" con opción de
 reconectar (caso límite de la spec).
+La espera de la autorización no se puede cancelar desde la app: termina al completarla, al
+denegarla en el navegador o por tiempo límite (5 minutos).
 
 **Registro y conexión (`app/accounts.py`, F1):**
 - Un registro por proveedor (no por cuenta), guardado en el almacén de credenciales con la
@@ -156,6 +171,13 @@ reconectar (caso límite de la spec).
   `expires_at` e `id_token`).
 - Cuenta ya conectada (F1-7): no se añade a la BD, pero sus tokens se sustituyen por los
   nuevos; así se reconecta una cuenta.
+- Para analizar, `AccountService.provider_for(cuenta)` construye el proveedor con el registro
+  y los tokens guardados. Si faltan (modo sesión tras reabrir, contraseña restablecida, sin
+  almacén) → `ReconnectRequiredError`. Este error y el de permiso caducado se tratan igual en
+  la UI: se indica la cuenta afectada y se ofrece "Volver a conectar", que lanza la conexión
+  con el proveedor de esa cuenta sin preguntarlo.
+- La guía de registro se abre desde el formulario de registro como fichero local
+  (`docs/guia-registro.md` del repositorio), porque la app se ejecuta desde el código.
 
 **Quitar cuenta (`app/accounts.py`, F9):** el resumen de la confirmación da la cuenta y su
 número de servicios (F9-1). Al confirmar: 1) retirar el permiso con los tokens guardados;
@@ -164,7 +186,9 @@ el permiso (Outlook, sin conexión, permiso ya caducado, error HTTP o sin regist
 p. ej. en modo sesión tras reabrir), los datos locales se borran igualmente y el resultado
 incluye la página donde retirarlo a mano (F9-4). Si falla el llavero al borrar los tokens,
 se lanza `KeyringUnavailableError` y la cuenta no se borra, para poder reintentarlo. El
-registro del proveedor se conserva.
+registro del proveedor se conserva. Sin almacén (sin llavero y sin elección hecha, p. ej.
+tras desactivar el modo sesión) no hay credenciales que retirar ni borrar: se borran los
+datos locales y se da la página de retirada manual.
 
 **Gmail**
 - Ámbito: `gmail.readonly` (mínimo que permite leer el cuerpo para extraer enlaces; principio 7).
@@ -193,6 +217,10 @@ registro del proveedor se conserva.
 - Revocación: **Microsoft no ofrece un endpoint para que la app revoque su propio permiso en
   cuentas personales** → se aplica F9-4 (F9-4 de la spec). Retirada manual:
   `https://account.live.com/consent/Manage`.
+
+**Eliminar cuenta y revocar acceso (F6):** ambos botones aparecen en cualquier servicio con
+enlace de gestión, sea cual sea su tipo de relación (la spec no los limita). Antes de abrir
+el enlace se pide confirmación (T038, principio 8) indicando que el estado no cambia.
 
 **Baja (F5)** a partir de `List-Unsubscribe`:
 - `https` + `List-Unsubscribe-Post: List-Unsubscribe=One-Click` → `POST` (RFC 8058) con el
@@ -254,7 +282,15 @@ propios (principio 6).
     llavero, se usa aunque exista un fichero cifrado. Sin llavero: si existe el fichero se
     pide la contraseña; si no, el usuario elige.
   - Ajuste `session_mode` en `settings` (`"1"`/`"0"`, desactivado por defecto). Al activarlo
-    se borran las credenciales guardadas en el llavero o en el fichero cifrado (F10-6).
+    se borran las credenciales guardadas en el llavero o en el fichero cifrado (F10-6):
+    `enable_session_mode` borra del almacén las claves conocidas (registro de cada proveedor
+    y tokens de cada cuenta, `AccountService.credential_keys()`, porque el llavero no permite
+    listarlas) y elimina `credentials.enc`. También se borran los datos de registro, que
+    viven en el mismo almacén. Si el llavero falla, el ajuste no cambia.
+  - Desactivar el modo sesión surte efecto al reabrir la app (entonces `choose_store` elige
+    llavero, contraseña o elección); hasta entonces el acceso sigue sin guardarse.
+  - Contraseña maestra al abrir (F10-3): si el usuario cierra el diálogo, la app se cierra
+    sin abrir la ventana principal.
   - Fichero cifrado: `credentials.enc` en la carpeta de datos; JSON con la sal (16 bytes) y
     un único bloque Fernet con todas las credenciales. Se reescribe entero en cada cambio
     (fichero temporal + renombrado atómico) y tiene permisos 0600 en Linux. scrypt con
