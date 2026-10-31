@@ -24,7 +24,9 @@ HEADERS = {
     "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
     "Received": "from somewhere",
 }
-MESSAGE = GmailMessage("m1", 0, headers=HEADERS, html="<a href='https://shop.example/account'>x</a>")
+MESSAGE = GmailMessage(
+    "m1", 0, headers=HEADERS, html="<a href='https://shop.example/account'>x</a>"
+)
 
 
 def endpoints(url: str) -> GoogleEndpoints:
@@ -40,7 +42,8 @@ def tokens() -> Tokens:
 def gmail():
     fake = FakeGmail([MESSAGE])
     with LocalServer(fake.handler) as server:
-        yield fake, server, GmailProvider("cid", "secret", tokens(), endpoints=endpoints(server.url))
+        provider = GmailProvider("cid", "secret", tokens(), endpoints=endpoints(server.url))
+        yield fake, server, provider
 
 
 def test_provider_follows_the_protocol(gmail):

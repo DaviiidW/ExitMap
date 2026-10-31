@@ -199,7 +199,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Referencia: plan §4 "Microsoft"; spec F2-1, F2-3.
   - Hecho cuando: tests contra servidor local que imita Graph.
 
-- [ ] T027 — Outlook: cabeceras, cuerpo, cuenta y revocación
+- [x] T027 — Outlook: cabeceras, cuerpo, cuenta y revocación
   - Qué: `internetMessageHeaders`, cuerpo, email desde `id_token`, `revoke()` lanza
     `RevokeNotSupported`; ámbitos `Mail.Read offline_access openid email`.
   - Referencia: plan §4; spec F1-4, F9-4.

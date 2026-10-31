@@ -15,7 +15,7 @@ import time
 import urllib.parse
 import webbrowser
 from collections.abc import Callable, Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime, timedelta
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Any
@@ -329,7 +329,9 @@ class OAuthSession:
     def _refresh(self) -> None:
         if self.tokens is None or not self.tokens.refresh_token:
             raise PermissionExpiredError()
-        self.tokens = refresh(self.http, self.config, self.tokens.refresh_token, self._clock())
+        new = refresh(self.http, self.config, self.tokens.refresh_token, self._clock())
+        # A refresh may not include a new ``id_token``: keep the one from the authorization.
+        self.tokens = new if new.id_token else replace(new, id_token=self.tokens.id_token)
 
     def _access_token(self) -> str:
         if self.tokens is None:

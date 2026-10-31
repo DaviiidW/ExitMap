@@ -44,7 +44,7 @@ def test_pages_are_followed_and_excluded_folders_dropped(graph):
     assert ids == ["inbox1", "archived", "inbox2"]
     pages = [r for r in graph.requests if r.path == "/me/messages"]
     assert len(pages) == 3
-    assert pages[0].param("$select") == "id,parentFolderId"
+    assert pages[0].param("$select") == "id,parentFolderId,internetMessageHeaders"
     assert pages[0].param("$top") == "100"
     assert pages[1].param("$skip") == "3"
 
