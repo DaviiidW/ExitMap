@@ -28,7 +28,7 @@ from exitmap.errors import (
     InvalidRegistrationError,
     PermissionExpiredError,
 )
-from exitmap.providers.http import HttpClient, HttpError
+from exitmap.providers.http import HttpClient, HttpError, Params
 from exitmap.ui.strings_es import AUTH_PAGE_DONE, AUTH_PAGE_FAILED, AUTH_PAGE_TITLE
 
 # RFC 7636: the verifier has 43-128 characters; 32 random bytes give 43 in base64url.
@@ -340,9 +340,7 @@ class OAuthSession:
         assert self.tokens is not None
         return self.tokens.access_token
 
-    def get_json(
-        self, url: str, params: Mapping[str, str | int] | None = None
-    ) -> dict[str, Any]:
+    def get_json(self, url: str, params: Params | None = None) -> dict[str, Any]:
         """Authorised ``GET``."""
         try:
             return self.http.get_json(url, params, self._bearer())

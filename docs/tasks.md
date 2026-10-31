@@ -186,7 +186,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Referencia: plan §4 "Gmail"; spec F2-1, F2-3.
   - Hecho cuando: tests contra servidor local que imita Gmail: paginación, periodo, carpetas.
 
-- [ ] T025 — Gmail: cabeceras, cuerpo, cuenta y revocación
+- [x] T025 — Gmail: cabeceras, cuerpo, cuenta y revocación
   - Qué: `messages.get` metadata/full, `getProfile`, `revoke`; ámbito `gmail.readonly`.
   - Referencia: plan §4; spec F1-4, F9-3.
   - Hecho cuando: tests contra servidor local; test que comprueba que el único ámbito pedido

@@ -15,10 +15,13 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from typing import Any
 
 from exitmap.errors import ExitMapError, OfflineError
+
+# A query parameter may repeat (``?h=From&h=Subject``) when its value is a sequence.
+Params = Mapping[str, str | int | Sequence[str]]
 
 TIMEOUT_SECONDS = 30
 MAX_RETRIES = 3
@@ -76,12 +79,12 @@ class HttpClient:
     def get_json(
         self,
         url: str,
-        params: Mapping[str, str | int] | None = None,
+        params: Params | None = None,
         headers: Mapping[str, str] | None = None,
     ) -> dict[str, Any]:
         """``GET url?params`` and decode the JSON answer."""
         if params:
-            url = f"{url}?{urllib.parse.urlencode(params)}"
+            url = f"{url}?{urllib.parse.urlencode(params, doseq=True)}"
         return self._send("GET", url, None, dict(headers or {}))
 
     def post_json(
