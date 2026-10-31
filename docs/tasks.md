@@ -329,7 +329,7 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Hecho cuando: tests unitarios del contenido del `.desktop` y del comando PowerShell;
     comprobación manual en Linux y Windows: el icono abre la app.
 
-- [ ] T044 — Guía de registro en español
+- [x] T044 — Guía de registro en español
   - Qué: `docs/guia-registro.md`: pasos para crear el registro en Google (cliente
     Escritorio, pantalla de consentimiento en producción sin verificar, aviso de "app no
     verificada") y en Microsoft (cliente público, redirección `http://localhost`), y qué datos
