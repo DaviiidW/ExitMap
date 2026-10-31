@@ -74,6 +74,15 @@ leída desde Tk con `after()`. Cancelación con `threading.Event`. Un único an�
 **Interfaz `MailProvider`** (una implementación por proveedor, probadas por separado):
 `authorize()`, `account_email()`, `list_message_ids(period, folders)`,
 `get_headers(id)`, `get_body(id)`, `revoke()` (puede lanzar `RevokeNotSupported`).
+Los servicios de aplicación no crean proveedores concretos: reciben una fábrica
+`(proveedor, registro, tokens) → MailProvider` (`app/accounts.py`, `build_provider`; en los
+tests, una fábrica falsa). Gmail y Outlook exponen además la propiedad `tokens` para que la
+app guarde los tokens tras autorizar; el Protocol `MailProvider` no cambia.
+
+**Abrir enlaces fuera de la app:** interfaz `Opener` (`open_url`, `open_mail`) en
+`app/unsubscribe.py`, usada también por `app/services.py` (F6). `SystemOpener` usa
+`webbrowser` para las webs y, para `mailto:`, `os.startfile` en Windows y `xdg-open` en
+Linux (en otros sistemas, el navegador). En los tests se inyecta un abridor falso.
 
 **Arranque con icono:** `scripts/install.py` crea `.venv`, instala el paquete y crea:
 Linux → `~/.local/share/applications/exitmap.desktop` (+ copia en el escritorio);
@@ -132,6 +141,28 @@ local de una sola petición con tiempo límite.
 Refresco automático; si el refresco falla → error "permiso caducado o retirado" con opción de
 reconectar (caso límite de la spec).
 
+**Registro y conexión (`app/accounts.py`, F1):**
+- Un registro por proveedor (no por cuenta), guardado en el almacén de credenciales con la
+  clave `registration:<proveedor>` y reutilizado por las demás cuentas de ese proveedor.
+  `accounts.client_registration_ref` guarda esa clave.
+- Antes de autorizar se quitan los espacios y se comprueba que no faltan campos (Google:
+  client ID y secret; Microsoft: client ID) → `InvalidRegistrationError`. Sin registro
+  guardado ni introducido → `RegistrationMissingError` (F1-2).
+- El registro y los tokens solo se guardan si la autorización tiene éxito. Tokens con la
+  clave `tokens:<proveedor>:<email>` (JSON con `access_token`, `refresh_token`,
+  `expires_at` e `id_token`).
+- Cuenta ya conectada (F1-7): no se añade a la BD, pero sus tokens se sustituyen por los
+  nuevos; así se reconecta una cuenta.
+
+**Quitar cuenta (`app/accounts.py`, F9):** el resumen de la confirmación da la cuenta y su
+número de servicios (F9-1). Al confirmar: 1) retirar el permiso con los tokens guardados;
+2) borrar los tokens del almacén; 3) `DELETE` de la cuenta (cascada). Si no se puede retirar
+el permiso (Outlook, sin conexión, permiso ya caducado, error HTTP o sin registro/tokens,
+p. ej. en modo sesión tras reabrir), los datos locales se borran igualmente y el resultado
+incluye la página donde retirarlo a mano (F9-4). Si falla el llavero al borrar los tokens,
+se lanza `KeyringUnavailableError` y la cuenta no se borra, para poder reintentarlo. El
+registro del proveedor se conserva.
+
 **Gmail**
 - Ámbito: `gmail.readonly` (mínimo que permite leer el cuerpo para extraer enlaces; principio 7).
   `gmail.metadata` no basta para F4-3 paso 2.
@@ -144,7 +175,8 @@ reconectar (caso límite de la spec).
   progreso), después `messages.get?format=metadata` con `From, Subject, Date,
   List-Unsubscribe, List-Unsubscribe-Post`. Cuerpo (`format=full`) solo para los correos de
   evidencia de registro/acceso sin entrada en catálogo.
-- Revocación: `POST https://oauth2.googleapis.com/revoke`.
+- Revocación: `POST https://oauth2.googleapis.com/revoke`. Retirada manual (F9-4):
+  `https://myaccount.google.com/permissions`.
 
 **Microsoft (Outlook/Hotmail)**
 - Ámbitos: `Mail.Read`, `offline_access`, `openid`, `email`. Autoridad `common`.
@@ -156,14 +188,19 @@ reconectar (caso límite de la spec).
   usuario los incluya (los ID de esas carpetas se obtienen con `/me/mailFolders/{nombre}`).
   El total exacto es el número de ID tras recorrer todas las páginas, como en Gmail.
 - Revocación: **Microsoft no ofrece un endpoint para que la app revoque su propio permiso en
-  cuentas personales** → se aplica F9-4 (F9-4 de la spec).
+  cuentas personales** → se aplica F9-4 (F9-4 de la spec). Retirada manual:
+  `https://account.live.com/consent/Manage`.
 
 **Baja (F5)** a partir de `List-Unsubscribe`:
-- `https` + `List-Unsubscribe-Post: List-Unsubscribe=One-Click` → `POST` (RFC 8058); éxito = 2xx.
+- `https` + `List-Unsubscribe-Post: List-Unsubscribe=One-Click` → `POST` (RFC 8058) con el
+  cuerpo `List-Unsubscribe=One-Click`; éxito = 2xx. Se envía con `HttpClient.post_form`, que
+  devuelve el estado sin leer la respuesta como JSON (estos enlaces responden con HTML).
 - Solo `https` → abrir en navegador (`webbrowser`).
 - Solo `mailto:` → abrir el programa de correo con asunto/cuerpo preparados
-  (`os.startfile` en Windows, `xdg-open` en Linux). La app no envía nada.
-- Fallo del POST → mensaje con el motivo y apertura del enlace web (F5-3).
+  (`os.startfile` en Windows, `xdg-open` en Linux). La app no envía nada. Si el enlace no
+  trae asunto, se añade `subject=unsubscribe`.
+- Fallo del POST → mensaje con el motivo y apertura del mismo enlace web (F5-3). Motivo:
+  `OfflineError` sin conexión; `UnsubscribeFailedError` ante cualquier otro fallo.
 
 **Catálogo:** `data/catalog.json` en el repositorio, indexado por dominio
 (`name, manage_url, unsubscribe_url`). Se actualiza con `git pull`. Sin conexiones a servidores
@@ -223,8 +260,13 @@ propios (principio 6).
     salida (restablecer, F10-5).
   - Un fallo del llavero en uso (bloqueado, acceso denegado) lanza `KeyringUnavailableError`
     con mensaje comprensible (principio 5).
+  - Elección sin llavero (F10-2): `store_from_choice` crea el fichero cifrado con la
+    contraseña elegida o, si se elige el modo sesión, activa el ajuste y devuelve un
+    `MemoryStore`. Mientras el usuario no ha elegido, `AccountService.store` es `None` y no
+    se puede conectar ninguna cuenta.
 - Datos de registro OAuth (client ID y, en Google, client secret de escritorio, que Google no
-  considera confidencial) → en el mismo almacén de credenciales.
+  considera confidencial) → en el mismo almacén de credenciales (claves en §4 "Registro y
+  conexión"). En modo sesión también se pierden al cerrar la app.
 - Logs: sin contenido de correos ni credenciales (filtro + test). Errores con mensaje
   personalizado (`errors.py`, principio 5).
 - Mínimos privilegios: `gmail.readonly` y `Mail.Read`; nada de envío.
@@ -251,7 +293,7 @@ propios (principio 6).
 |---|---|
 | F1 Conectar cuentas | `providers/oauth.py`, `gmail.py`, `outlook.py`, `app/accounts.py`, `storage/credentials.py`; §4 |
 | F2 Analizar | `app/analysis.py` (hilo, progreso, cancelación, transacción), `domain/detection.py`, `domains.py`; §3, §5 |
-| F3 Lista y filtros | `app/services.py`, `ui/presenters.py`, `ui/main_window.py` |
+| F3 Lista y filtros | `app/services.py` (búsqueda sin distinguir mayúsculas en nombre y dominio; un valor como máximo por filtro: cuenta, tipo, estado), `ui/presenters.py`, `ui/main_window.py` |
 | F4 Ficha | `ui/service_detail.py`, `domain/links.py`, `catalog.py`; tabla `evidence` |
 | F5 Baja | `app/unsubscribe.py`; §4 Baja |
 | F6 Eliminar/revocar (abrir web) | `app/services.py` + `webbrowser`; `manage_url` |

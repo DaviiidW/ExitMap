@@ -69,7 +69,9 @@ para que ExitMap pueda analizarlas.
 6. Dado que el usuario final cancela o deniega la autorización, cuando vuelve a la app,
    entonces no se añade ninguna cuenta y se muestra un mensaje que explica qué ha pasado.
 7. Dado que una cuenta ya está conectada, cuando el usuario final vuelve a conectarla,
-   entonces no se duplica y se le informa de que ya estaba conectada.
+   entonces no se duplica y se le informa de que ya estaba conectada. Su acceso se renueva
+   con la nueva autorización: así se reconecta una cuenta (F10-5, F10-6, F10-7 y permiso
+   caducado, §5).
 
 ### F2. Analizar el buzón
 
@@ -225,7 +227,9 @@ suyo en mi equipo ni ningún permiso activo.
    confirmación que indica qué se borrará (credenciales, resultados del análisis y estados) y
    no se hace nada hasta que confirme.
 2. Dado que el usuario final confirma, cuando termina el proceso, entonces la cuenta y todos
-   sus servicios desaparecen de la app, y al reabrirla no reaparecen.
+   sus servicios desaparecen de la app, y al reabrirla no reaparecen. Los datos de registro
+   de la app en el proveedor (F1-2) se conservan, porque no son datos de la cuenta y los
+   usan las demás cuentas de ese proveedor.
 3. Dada una cuenta de Gmail, cuando el usuario final confirma y termina el proceso, entonces
    la app ha retirado su permiso de acceso en Google.
 4. Dada una cuenta de Outlook (Microsoft no permite que la app retire su propio permiso), o
