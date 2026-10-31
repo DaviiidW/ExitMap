@@ -9,8 +9,8 @@ from collections.abc import Callable
 from tkinter import ttk
 
 from exitmap.app.services import ServiceCatalogue, ServiceDetail
-from exitmap.app.unsubscribe import UnsubscribeService
-from exitmap.domain.models import State
+from exitmap.app.unsubscribe import Outcome, UnsubscribeService
+from exitmap.domain.models import State, UnsubscribeMethod
 from exitmap.ui import dialogs, presenters
 from exitmap.ui import strings_es as text
 
@@ -31,8 +31,10 @@ class ServiceDetailWindow(tk.Toplevel):
         catalogue: ServiceCatalogue,
         unsubscribe: UnsubscribeService,
         on_change: Callable[[], None] = lambda: None,
+        on_network: Callable[[BaseException | None], None] = lambda error: None,
     ) -> None:
         super().__init__(parent)
+        self.on_network = on_network
         self.transient(parent.winfo_toplevel())
         self.service_id = service_id
         self.catalogue = catalogue
@@ -128,6 +130,9 @@ class ServiceDetailWindow(tk.Toplevel):
         except Exception as exc:  # noqa: BLE001 - every failure must reach the user
             dialogs.show_error(self, dialogs.user_error(exc))
             return
+        if service.unsubscribe_method is UnsubscribeMethod.ONE_CLICK:
+            # The automatic unsubscribe is the only action here that uses the network.
+            self.on_network(result.error if result.outcome is Outcome.FAILED_WEB_OPENED else None)
         self._reload()
         dialogs.show_info(self, presenters.unsubscribe_result_message(result, service))
 

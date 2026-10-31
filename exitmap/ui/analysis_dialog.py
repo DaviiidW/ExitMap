@@ -34,7 +34,9 @@ class AnalysisDialog(tk.Toplevel):
     """Choose what to analyse, follow the progress and see the result.
 
     ``on_start`` runs when the analysis starts and ``on_end`` when it ends in any way, so
-    the main window can block a second analysis and reload the list.
+    the main window can block a second analysis and reload the list. ``on_network`` gets
+    the outcome of the requests (``None`` if they worked) for the no connection notice,
+    and ``on_reconnect`` connects again an account whose permission expired (spec §5).
     """
 
     def __init__(
@@ -46,6 +48,8 @@ class AnalysisDialog(tk.Toplevel):
         selected: Account | None = None,
         on_start: Callable[[], None] = lambda: None,
         on_end: Callable[[], None] = lambda: None,
+        on_network: Callable[[BaseException | None], None] = lambda error: None,
+        on_reconnect: Callable[[Account], None] | None = None,
     ) -> None:
         super().__init__(parent)
         self.title(text.ANALYSIS_TITLE)
@@ -56,6 +60,8 @@ class AnalysisDialog(tk.Toplevel):
         self.provider_for = provider_for
         self.on_start = on_start
         self.on_end = on_end
+        self.on_network = on_network
+        self.on_reconnect = on_reconnect
         self.running = False
         self.protocol("WM_DELETE_WINDOW", self.close)
 
@@ -139,6 +145,8 @@ class AnalysisDialog(tk.Toplevel):
         buttons.grid(row=5, column=0, columnspan=2, sticky="e", pady=(8, 0))
         self.start_button = ttk.Button(buttons, text=text.START_ANALYSIS, command=self.start)
         self.start_button.pack(side="left", padx=(0, 6))
+        self.options_reconnect = ttk.Button(buttons, text=text.RECONNECT_BUTTON,
+                                            command=self.reconnect)
         ttk.Button(buttons, text=text.CANCEL, command=self.close).pack(side="left")
         self._update_options()
 
@@ -175,6 +183,7 @@ class AnalysisDialog(tk.Toplevel):
         for entry in (self.start_entry, self.end_entry):
             entry.configure(state="normal" if custom else "disabled")
         self.error.configure(text="")
+        self.options_reconnect.pack_forget()
 
     # Running ----------------------------------------------------------------------------
 
@@ -186,8 +195,12 @@ class AnalysisDialog(tk.Toplevel):
         self.progress_bar.pack(fill="x", pady=8)
         self.result = ttk.Label(frame, text="", wraplength=420, justify="left")
         self.result.pack(anchor="w")
-        self.progress_button = ttk.Button(frame, text=text.CANCEL, command=self.cancel)
-        self.progress_button.pack(anchor="e", pady=(8, 0))
+        buttons = ttk.Frame(frame)
+        buttons.pack(anchor="e", pady=(8, 0))
+        self.progress_reconnect = ttk.Button(buttons, text=text.RECONNECT_BUTTON,
+                                             command=self.reconnect)
+        self.progress_button = ttk.Button(buttons, text=text.CANCEL, command=self.cancel)
+        self.progress_button.pack(side="right")
 
     def start(self) -> None:
         """Start the analysis, unless the options are not valid (F2-2)."""
@@ -203,7 +216,12 @@ class AnalysisDialog(tk.Toplevel):
                 options.mode,
             )
         except Exception as exc:  # noqa: BLE001 - every failure must reach the user
-            self.error.configure(text=user_error(exc).user_message)
+            error = user_error(exc)
+            if presenters.needs_reconnect(error) and self.on_reconnect is not None:
+                self.error.configure(text=presenters.reconnect_message(error, account))
+                self.options_reconnect.pack(side="left", padx=(0, 6), before=self.start_button)
+            else:
+                self.error.configure(text=error.user_message)
             return
         self.running = True
         self.options_frame.pack_forget()
@@ -231,13 +249,29 @@ class AnalysisDialog(tk.Toplevel):
         self.running = False
         self.on_end()
         if isinstance(event, Finished):
+            self.on_network(None)
             message = presenters.analysis_done_message(event.service_count)
         elif isinstance(event, Cancelled):
             message = text.ANALYSIS_CANCELLED
         else:
-            message = f"{event.error.user_message}\n\n{text.ANALYSIS_STOPPED}"
+            self.on_network(event.error)
+            error = event.error
+            if presenters.needs_reconnect(error):
+                problem = presenters.reconnect_message(error, self.account())
+                if self.on_reconnect is not None:
+                    self.progress_reconnect.pack(side="right", padx=(6, 0))
+            else:
+                problem = error.user_message
+            message = f"{problem}\n\n{text.ANALYSIS_STOPPED}"
         self.result.configure(text=message)
         self.progress_button.configure(text=text.CLOSE, command=self.destroy)
+
+    def reconnect(self) -> None:
+        """Connect again the account whose permission expired; results stay (spec §5)."""
+        account = self.account()
+        self.destroy()
+        if self.on_reconnect is not None:
+            self.on_reconnect(account)
 
     def cancel(self) -> None:
         """Stop the analysis; its results are discarded (F2-5)."""

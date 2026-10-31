@@ -326,3 +326,11 @@ SESSION_OFF_DONE = (
     "Modo sesión desactivado. Se aplicará la próxima vez que abras ExitMap; hasta entonces "
     "el acceso a tus cuentas sigue sin guardarse."
 )
+
+# No connection and expired permission (spec §5).
+OFFLINE_NOTICE = (
+    "Sin conexión: «Analizar», la baja automática y la retirada del permiso al quitar una "
+    "cuenta necesitan conexión. Abrir webs y preparar correos sigue disponible."
+)
+AFFECTED_ACCOUNT = "Cuenta afectada: {account}."
+RECONNECT_BUTTON = "Volver a conectar"

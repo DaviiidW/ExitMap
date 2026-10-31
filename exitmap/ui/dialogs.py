@@ -247,9 +247,11 @@ class ConnectFlow:
         ask_provider: Callable[[], Provider | None] | None = None,
         ask_registration: Callable[[Provider, str | None], Registration | None] | None = None,
         choose_store: Callable[[], CredentialStore | None] | None = None,
+        on_network: Callable[[BaseException | None], None] = lambda error: None,
     ) -> None:
         self.parent = parent
         self.choose_store = choose_store
+        self.on_network = on_network
         self.accounts = accounts
         self.run = run
         self.opener = opener
@@ -260,14 +262,15 @@ class ConnectFlow:
         )
         self.waiting: WaitDialog | None = None
 
-    def start(self) -> None:
+    def start(self, provider: Provider | None = None) -> None:
+        """Connect an account; with ``provider`` (reconnecting) it is not asked."""
         if self.accounts.store is None:
             # No keyring: choose master password or session mode first (F10-2).
             store = self.choose_store() if self.choose_store is not None else None
             if store is None:
                 return
             self.accounts.store = store
-        provider = self.ask_provider()
+        provider = provider or self.ask_provider()
         if provider is None:
             return
         registration = None
@@ -289,6 +292,7 @@ class ConnectFlow:
         if self.waiting is not None:
             self.waiting.destroy()
             self.waiting = None
+        self.on_network(None if ok else value)
         if ok:
             self.on_connected()
             if value.already_connected:
@@ -325,11 +329,13 @@ class RemoveAccountFlow:
         accounts: AccountService,
         run: RemoveRunner,
         on_removed: Callable[[], None],
+        on_network: Callable[[BaseException | None], None] = lambda error: None,
     ) -> None:
         self.parent = parent
         self.accounts = accounts
         self.run = run
         self.on_removed = on_removed
+        self.on_network = on_network
         self.waiting: WaitDialog | None = None
 
     def start(self, account: Account) -> None:
@@ -349,6 +355,8 @@ class RemoveAccountFlow:
             self.waiting = None
         self.on_removed()
         if ok:
+            if value.revoked:  # the permission was withdrawn over the network
+                self.on_network(None)
             show_info(self.parent, presenters.removal_result_message(account, value))
         else:
             show_error(self.parent, user_error(value))

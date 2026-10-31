@@ -306,9 +306,9 @@ Cada tarea deja el proyecto funcionando: `pytest` en verde y cobertura ≥ 75 %
   - Referencia: spec F10-2..7.
   - Hecho cuando: prueba de humo y comprobación manual con llavero simulado ausente.
 
-- [ ] T041 — Sin conexión y permiso caducado
-  - Qué: modo "sin conexión" (deshabilita analizar, baja automática y revocación) y oferta
-    de reconectar cuando falla el refresco.
+- [x] T041 — Sin conexión y permiso caducado
+  - Qué: modo "sin conexión" (aviso de que analizar, baja automática y revocación necesitan
+    conexión, sin deshabilitarlas; plan §4) y oferta de reconectar cuando falla el refresco.
   - Referencia: spec §5; plan §4 "Detección de sin conexión".
   - Hecho cuando: tests de presentador y comprobación manual desconectando la red.
 

@@ -69,22 +69,29 @@ class MainWindow(ttk.Frame):
                 self.opener,
                 self.refresh,
                 choose_store=self._choose_store if data_dir is not None else None,
+                on_network=self.report_network,
             )
             if connect_runner is not None
             else None
         )
         self.remove_flow = (
-            RemoveAccountFlow(self, accounts, remove_runner, self.refresh)
+            RemoveAccountFlow(
+                self, accounts, remove_runner, self.refresh, on_network=self.report_network
+            )
             if remove_runner is not None
             else None
         )
+        self.connection = presenters.ConnectionStatus()
         self._account_options: list[tuple[str, int | None]] = []
         self._relation_options = presenters.relation_filter_options()
         self._state_options = presenters.state_filter_options()
         self.services: list[Service] = []
 
         self.columnconfigure(1, weight=1)
-        self.rowconfigure(0, weight=1)
+        self.rowconfigure(1, weight=1)
+        self.offline_notice = ttk.Label(
+            self, text="", foreground="#8a4b00", wraplength=900, justify="left"
+        )
         self._build_accounts_panel()
         self._build_services_panel()
         self.refresh()
@@ -93,7 +100,7 @@ class MainWindow(ttk.Frame):
 
     def _build_accounts_panel(self) -> None:
         panel = ttk.LabelFrame(self, text=text.ACCOUNTS_TITLE, padding=6)
-        panel.grid(row=0, column=0, sticky="ns", padx=(0, 8))
+        panel.grid(row=1, column=0, sticky="ns", padx=(0, 8))
         panel.rowconfigure(0, weight=1)
         self.account_list = tk.Listbox(panel, width=34, activestyle="none", exportselection=False)
         self.account_list.grid(row=0, column=0, sticky="ns")
@@ -126,7 +133,7 @@ class MainWindow(ttk.Frame):
 
     def _build_services_panel(self) -> None:
         panel = ttk.Frame(self)
-        panel.grid(row=0, column=1, sticky="nsew")
+        panel.grid(row=1, column=1, sticky="nsew")
         panel.columnconfigure(0, weight=1)
         panel.rowconfigure(1, weight=1)
 
@@ -180,6 +187,21 @@ class MainWindow(ttk.Frame):
         if self.connect_flow is not None:
             self.connect_flow.start()
 
+    def report_network(self, error: BaseException | None) -> None:
+        """Show or hide the no connection notice after an action that used the network."""
+        self.connection.record(error)
+        notice = self.connection.notice
+        if notice is None:
+            self.offline_notice.grid_remove()
+        else:
+            self.offline_notice.configure(text=notice)
+            self.offline_notice.grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 6))
+
+    def reconnect(self, account: Account) -> None:
+        """Connect again an account whose permission expired (spec §5, F1-7)."""
+        if self.connect_flow is not None:
+            self.connect_flow.start(account.provider)
+
     def _choose_store(self) -> CredentialStore | None:
         assert self.data_dir is not None
         return ask_store_choice(self, self.accounts.db, self.data_dir)
@@ -212,6 +234,8 @@ class MainWindow(ttk.Frame):
             selected=self.selected_account(),
             on_start=self._analysis_started,
             on_end=self._analysis_ended,
+            on_network=self.report_network,
+            on_reconnect=self.reconnect if self.connect_flow is not None else None,
         )
 
     def _analysis_started(self) -> None:
@@ -241,7 +265,12 @@ class MainWindow(ttk.Frame):
         if not selection:
             return None
         return ServiceDetailWindow(
-            self, int(selection[0]), self.catalogue, self.unsubscribe, self.refresh_services
+            self,
+            int(selection[0]),
+            self.catalogue,
+            self.unsubscribe,
+            self.refresh_services,
+            on_network=self.report_network,
         )
 
     def refresh(self) -> None:

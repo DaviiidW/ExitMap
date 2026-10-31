@@ -7,6 +7,7 @@
   (spec F5-1, F9-1).
 - Rows and filter options of the main window (spec F3, F8-4).
 - Fields, evidence and action results of the service page (spec F4, F5-2..5, F6).
+- No connection notice and accounts to reconnect (spec §5; plan §4).
 """
 
 from dataclasses import dataclass
@@ -18,7 +19,14 @@ from exitmap.app.analysis import AnalysisMode, new_only_period
 from exitmap.app.services import ServiceDetail, ServiceFilter
 from exitmap.app.unsubscribe import Outcome, UnsubscribeResult
 from exitmap.domain.models import Account, Evidence, Provider, RelationType, Service, State
-from exitmap.errors import ExitMapError, InvalidDateError, InvalidDateRangeError
+from exitmap.errors import (
+    ExitMapError,
+    InvalidDateError,
+    InvalidDateRangeError,
+    OfflineError,
+    PermissionExpiredError,
+    ReconnectRequiredError,
+)
 from exitmap.providers.base import Folders, Period
 from exitmap.ui import strings_es as text
 
@@ -328,3 +336,39 @@ def new_password_error(password: str, repeat: str) -> str | None:
     if password != repeat:
         return text.PASSWORD_MISMATCH
     return None
+
+
+class ConnectionStatus:
+    """No connection mode of the interface (spec §5; plan §4).
+
+    There is no separate check: a request that fails for lack of network turns it on and
+    the next one that works turns it off. The actions stay available; the notice says
+    which ones need a connection.
+    """
+
+    def __init__(self) -> None:
+        self.offline = False
+
+    def record(self, error: BaseException | None) -> None:
+        """Outcome of an action that used the network; ``None`` means it worked.
+
+        Other errors (denied, rejected registration…) say nothing about the network.
+        """
+        if error is None:
+            self.offline = False
+        elif isinstance(error, OfflineError):
+            self.offline = True
+
+    @property
+    def notice(self) -> str | None:
+        return text.OFFLINE_NOTICE if self.offline else None
+
+
+def needs_reconnect(error: BaseException) -> bool:
+    """Whether the account must be connected again (expired permission, no saved access)."""
+    return isinstance(error, (PermissionExpiredError, ReconnectRequiredError))
+
+
+def reconnect_message(error: ExitMapError, account: Account) -> str:
+    """The error and the account it affects (spec §5 "Permiso caducado")."""
+    return f"{error.user_message}\n{text.AFFECTED_ACCOUNT.format(account=account.email)}"

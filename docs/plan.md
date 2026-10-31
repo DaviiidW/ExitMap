@@ -130,8 +130,11 @@ settings(key, value)                                         -- session_mode, et
 
 **Detección de "sin conexión":** no hay comprobación aparte. Un error de red en cualquier
 petición (`providers/http.py`) lanza la excepción "sin conexión"; la interfaz pasa a modo sin
-conexión (deshabilita analizar, baja automática y revocación) hasta el siguiente intento que
-tenga éxito.
+conexión hasta el siguiente intento que tenga éxito. En ese modo no se deshabilita nada (si
+no, no habría ningún intento posible): la ventana principal muestra un aviso fijo que indica
+que analizar, la baja automática y la retirada del permiso al quitar una cuenta necesitan
+conexión (spec §5). Si se intentan y fallan, se aplica lo de siempre: la baja abre la web
+(F5-3) y quitar la cuenta borra los datos locales e indica dónde retirar el permiso (F9-4).
 
 **OAuth (ambos):** navegador del sistema → redirección a un servidor local que escucha en
 `127.0.0.1:<puerto aleatorio>`. La `redirect_uri` usa `http://127.0.0.1:<puerto>` en Google y
@@ -301,6 +304,6 @@ propios (principio 6).
 | F8 Re-análisis y avisos | Fusión en §3; `has_alert` |
 | F9 Quitar cuenta | `app/accounts.py`, borrado en cascada, `MailProvider.revoke()` |
 | F10 Credenciales | `storage/credentials.py`; §7 |
-| Casos límite (sin conexión, permiso caducado, error) | `errors.py`, refresco OAuth §4, UI deshabilita acciones con red |
+| Casos límite (sin conexión, permiso caducado, error) | `errors.py`, refresco OAuth §4, aviso de sin conexión en la UI §4 |
 | Persistencia entre sesiones | SQLite en carpeta de datos §2 |
 | Interfaz en español | `ui/strings_es.py` |
